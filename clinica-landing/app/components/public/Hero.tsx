@@ -18,9 +18,7 @@ export default function HeroClinicaCompleto() {
           className="text-center md:text-left"
         >
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-normal text-slate-700 mb-6 leading-tight">
-            Atención médica de excelencia
-            <br className="hidden md:block" />
-            centrada en vos
+            Atención médica de excelencia <span className="md:block inline">centrada en vos</span>
           </h1>
 
           <p className="text-slate-600 text-base sm:text-lg mb-8 max-w-xl mx-auto md:mx-0">

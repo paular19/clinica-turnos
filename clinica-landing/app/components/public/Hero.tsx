@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 export default function HeroClinicaCompleto() {
   return (
-    <section className="relative w-full min-h-[80vh] overflow-hidden bg-white">
+    <section className="relative w-full min-h-[80vh] overflow-visible bg-white">
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-10 items-center">
 
@@ -35,7 +35,7 @@ export default function HeroClinicaCompleto() {
         </motion.div>
 
         {/* IMAGEN */}
-        <div className="relative w-full h-[280px] sm:h-[360px] md:h-[480px] rounded-2xl overflow-hidden shadow-lg">
+        <div className="relative w-full h-[280px] sm:h-[360px] md:h-[480px] rounded-2xl overflow-hidden shadow-lg md:-ml-8 lg:-ml-12">
           <Image
             src="/assets/hero-entrada.jpg"
             alt="Equipo médico profesional"

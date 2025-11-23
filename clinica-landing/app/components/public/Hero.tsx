@@ -35,12 +35,13 @@ export default function HeroClinicaCompleto() {
         </motion.div>
 
         {/* IMAGEN */}
-        <div className="relative w-full h-[280px] sm:h-[360px] md:h-[480px] rounded-2xl overflow-hidden shadow-lg md:-ml-8 lg:-ml-12">
+        <div className="relative w-full h-[280px] sm:h-[360px] md:h-[480px] rounded-2xl overflow-hidden shadow-lg md:-ml-12 lg:-ml-20">
           <Image
             src="/assets/hero-entrada.jpg"
             alt="Equipo médico profesional"
             fill
-            className="object-cover object-left"
+            className="object-cover"
+            style={{ objectPosition: '10% center' }}
             priority
           />
           <div className="absolute inset-0 bg-[var(--brand-500)]/15" />

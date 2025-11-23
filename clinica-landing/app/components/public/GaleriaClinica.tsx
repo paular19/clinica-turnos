@@ -9,8 +9,8 @@ const imagenes = [
   { src: "/assets/galeria1.jpeg", alt: "Instalaciones de la clínica" },
   { src: "/assets/galeria2.jpeg", alt: "Sala de espera" },
   { src: "/assets/galeria3.jpeg", alt: "Consultorios médicos" },
-  { src: "/assets/galeria4.jpg", alt: "Área de internación" },
-  { src: "/assets/galeria5.jpg", alt: "Equipamiento médico" },
+  { src: "/assets/galeria4.JPG", alt: "Área de internación" },
+  { src: "/assets/galeria5.JPG", alt: "Equipamiento médico" },
   { src: "/assets/galeria6.jpeg", alt: "Quirófano" },
 ];
 

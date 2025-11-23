@@ -1,0 +1,3 @@
+Using Prisma with Next.js in development:
+- Ensure you import the Prisma client from lib/db/prisma.ts which implements a singleton.
+- This avoids creating multiple clients on hot reloads which can exhaust DB connections.

@@ -40,7 +40,7 @@ export default function HeroClinicaCompleto() {
             src="/assets/hero-entrada.jpg"
             alt="Equipo médico profesional"
             fill
-            className="object-cover"
+            className="object-cover object-left"
             priority
           />
           <div className="absolute inset-0 bg-[var(--brand-500)]/15" />

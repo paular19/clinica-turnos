@@ -69,32 +69,28 @@ export default function QuienesSomos() {
           ))}
         </motion.div>
 
-        {/* VERSIÓN MÓVIL: cuadrícula 2x2 con superposición ligera (md:hidden) */}
-        <div className="grid grid-cols-2 gap-3 md:hidden">
-          {fotos.map((f, i) => {
-            const offsetX = i % 2 === 0 ? 'translate-x-2' : '-translate-x-2';
-            const offsetY = i < 2 ? 'translate-y-0' : '-translate-y-6';
-            const z = i < 2 ? 'z-20' : 'z-10';
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.06 }}
-                viewport={{ once: true }}
-                className={`relative h-36 transform ${offsetX} ${offsetY} ${z} rounded-2xl overflow-hidden shadow-md cursor-pointer group`}
-              >
-                <div className="absolute inset-0 -z-10 rounded-full bg-[#4bbde3]/20 blur-2xl" />
+        {/* VERSIÓN MÓVIL: 2x2 con fotos redondas, borde y sombra (mantener estilo desktop) */}
+        <div className="grid grid-cols-2 gap-4 md:hidden">
+          {fotos.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.06 }}
+              viewport={{ once: true }}
+              className="relative h-36 flex items-center justify-center"
+            >
+              <div className="relative w-[140px] h-[140px] rounded-full overflow-hidden shadow-2xl border-[6px] border-white">
                 <Image
                   src={f.src}
                   alt=""
                   fill
                   sizes="50vw"
-                  className="object-cover rounded-2xl"
+                  className="object-cover"
                 />
-              </motion.div>
-            );
-          })}
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* TEXTO */}

@@ -39,30 +39,33 @@ export default function GaleriaClinica() {
           </p>
         </motion.div>
 
-        {/* GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {imagenes.map((img, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.03 }}
-              className="relative rounded-2xl overflow-hidden shadow-md cursor-pointer group"
-              onClick={() => setImagenActiva(img)}
-            >
-              <div className="relative w-full h-72">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
-            </motion.div>
-          ))}
+        {/* GRID: dos columnas en móvil con desplazamiento alternado para un look más dinámico */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {imagenes.map((img, i) => {
+            const offsetClass = i % 2 === 0 ? 'translate-x-4 sm:translate-x-0' : '-translate-x-4 sm:translate-x-0';
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                viewport={{ once: true }}
+                whileHover={{ scale: 1.03 }}
+                className={`${offsetClass} relative rounded-2xl overflow-hidden shadow-md cursor-pointer group transform transition-transform`}
+                onClick={() => setImagenActiva(img)}
+              >
+                <div className="relative w-full h-40 sm:h-72">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110 rounded-2xl"
+                  />
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 

@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 
 export default function QuienesSomos() {
   const fotos = [
-    { src: "/assets/foto1.jpg", size: 220, top: "5%", left: "10%", rot: -6 },
+    { src: "/assets/foto1.JPG", size: 220, top: "5%", left: "10%", rot: -6 },
     { src: "/assets/foto2.jpeg", size: 220, top: "45%", left: "5%", rot: 4 },
     { src: "/assets/foto3.jpeg", size: 220, top: "25%", left: "50%", rot: 2 },
-    { src: "/assets/foto4.jpg", size: 220, top: "65%", left: "60%", rot: -8 },
+    { src: "/assets/foto4.JPG", size: 220, top: "65%", left: "60%", rot: -8 },
   ];
 
   return (
@@ -35,13 +35,13 @@ export default function QuienesSomos() {
       {/* ⭐ CONTENIDO CENTRADO */}
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center relative">
 
-        {/* COLLAGE DE FOTOS */}
+        {/* COLLAGE DE FOTOS (hidden en móviles) */}
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7 }}
           viewport={{ once: true }}
-          className="relative w-full min-h-[650px] md:min-h-[700px]"
+          className="relative w-full min-h-[650px] md:min-h-[700px] hidden md:block"
         >
           {fotos.map((f, i) => (
             <motion.div
@@ -68,6 +68,29 @@ export default function QuienesSomos() {
             </motion.div>
           ))}
         </motion.div>
+
+        {/* VERSIÓN MÓVIL: lista centrada de fotos (evita overflow) */}
+        <div className="flex flex-col items-center gap-4 md:hidden">
+          {fotos.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              viewport={{ once: true }}
+              className="w-[140px] h-[140px] relative"
+            >
+              <div className="absolute inset-0 -z-10 rounded-full bg-[#4bbde3]/20 blur-2xl" />
+              <Image
+                src={f.src}
+                alt=""
+                width={140}
+                height={140}
+                className="rounded-full object-cover shadow-2xl border-[6px] border-white"
+              />
+            </motion.div>
+          ))}
+        </div>
 
         {/* TEXTO */}
         <motion.div

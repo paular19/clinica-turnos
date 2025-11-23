@@ -8,6 +8,12 @@
   --muted: #64748b;
 }
 
+/* Tailwind base/components/utilities (built at compile time) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
 /* Font stack: Montserrat primary, Poppins secondary */
 :root {
   --font-primary: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;

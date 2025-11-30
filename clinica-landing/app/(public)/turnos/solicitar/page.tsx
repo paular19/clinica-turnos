@@ -1,6 +1,6 @@
 import TurnoForm from "../components/TurnoForm";
 import Link from "next/link";
-import { solicitudTurno } from "@/lib/actions/turnos";
+import { solicitudTurno } from "../../../../lib/actions/turnos";
 
 export default function SolicitarPage() {
     return (

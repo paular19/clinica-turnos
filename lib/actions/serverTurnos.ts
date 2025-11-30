@@ -175,3 +175,96 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
     throw new Error("Error reprogramming turno");
   }
 }
+
+/**
+ * Acción pública para solicitar turno desde clinica-landing
+ * Crea un turno simple con datos del formulario
+ */
+export async function solicitudTurnoPublica(formData: FormData) {
+  try {
+    const nombre = formData.get("nombre") as string;
+    const email = formData.get("email") as string;
+    const fecha = formData.get("fecha") as string;
+    const hora = formData.get("hora") as string;
+    const especialidad = formData.get("especialidad") as string;
+
+    // Validación básica
+    if (!nombre || nombre.length < 2) throw new Error("Nombre inválido");
+    if (!email || !email.includes("@")) throw new Error("Email inválido");
+    if (!fecha) throw new Error("Fecha requerida");
+    if (!hora) throw new Error("Hora requerida");
+    if (!especialidad) throw new Error("Especialidad requerida");
+
+    // Combinar fecha y hora
+    const fechaHora = new Date(`${fecha}T${hora}`);
+    if (isNaN(fechaHora.getTime())) throw new Error("Fecha/hora inválida");
+
+    const codigo = genCodigo();
+
+    // Obtener clinicId por defecto (primera clínica)
+    const clinic = await prisma.clinic.findFirst();
+    if (!clinic) throw new Error("No clinic found");
+
+    // Obtener especialidad
+    const especialidadObj = await prisma.especialidad.findFirst({
+      where: { nombre: { contains: especialidad, mode: "insensitive" } }
+    });
+    if (!especialidadObj) throw new Error("Especialidad no encontrada");
+
+    // Crear o actualizar paciente
+    const paciente = await prisma.paciente.upsert({
+      where: { email_clinicId: { email, clinicId: clinic.id } },
+      update: { nombre },
+      create: {
+        nombre,
+        email,
+        apellido: "",
+        clinicId: clinic.id,
+        dni: ""
+      }
+    });
+
+    // Crear turno
+    const turno = await prisma.turno.create({
+      data: {
+        fecha: fechaHora,
+        estado: "PENDIENTE",
+        motivo: "Solicitud desde landing",
+        codigo,
+        pacienteId: paciente.id,
+        especialidadId: especialidadObj.id,
+        clinicId: clinic.id
+        // No asignamos profesional aún (lo hace admin)
+      }
+    });
+
+    // Intentar enviar email
+    try {
+      await sendConfirmationEmail({
+        to: email,
+        turno: {
+          codigo: turno.codigo,
+          fecha: turno.fecha
+        },
+        paciente,
+        pdfUrl: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/turnos/confirmacion?codigo=${turno.codigo}`
+      });
+    } catch (err) {
+      console.error("Failed to send email", err);
+    }
+
+    await revalidatePaths([`/turnos/confirmacion`]);
+
+    return {
+      success: true,
+      message: "Solicitud recibida. Recibirás confirmación por email.",
+      codigo: turno.codigo
+    };
+  } catch (error: any) {
+    console.error("solicitudTurnoPublica error:", error);
+    return {
+      success: false,
+      message: error.message || "Error al procesar la solicitud"
+    };
+  }
+}

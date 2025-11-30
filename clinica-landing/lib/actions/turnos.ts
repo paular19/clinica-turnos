@@ -1,5 +1,20 @@
 "use server";
 
+/**
+ * Importar y re-exportar desde lib de raíz
+ * Esta es la acción que usa clinica-landing para solicitar turnos
+ * 
+ * En monorepo:
+ * - /lib/actions/serverTurnos.ts = acciones admin (crear, editar, cancelar, reprogramar)
+ * - /lib/actions/serverTurnos.ts::solicitudTurnoPublica = acción para landing
+ * - clinica-landing/lib/actions/turnos.ts = envoltorio que importa desde raíz
+ */
+
+// Nota: No podemos importar directamente desde ../../../lib en Next.js
+// porque los imports relativos desde clinica-landing no resuelven bien monorepos.
+// En su lugar, la acción se duplica aquí pero con menor lógica.
+// TODO: Considerar usar workspaces de npm o path aliases en tsconfig
+
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -27,10 +42,10 @@ export async function solicitudTurno(formData: FormData) {
         // Validar con Zod
         const parsed = solicitudTurnoSchema.parse(data);
 
-        // TODO: Guardar en BD (por ahora solo log)
-        console.log("Solicitud de turno recibida:", parsed);
+        console.log("Solicitud de turno recibida (validada):", parsed);
 
-        // TODO: Enviar email de confirmación
+        // TODO: Conectar con serverTurnos.solicitudTurnoPublica() de raíz
+        // Por ahora solo valida y logea
 
         revalidatePath("/turnos");
 
@@ -42,7 +57,7 @@ export async function solicitudTurno(formData: FormData) {
         console.error("Error en solicitud de turno:", error);
 
         // Manejo de errores de Zod
-        if (error.errors) {
+        if (error.errors && Array.isArray(error.errors)) {
             const firstError = error.errors[0];
             return {
                 success: false,
@@ -52,7 +67,7 @@ export async function solicitudTurno(formData: FormData) {
 
         return {
             success: false,
-            message: "Ocurrió un error al procesar la solicitud"
+            message: error.message || "Ocurrió un error al procesar la solicitud"
         };
     }
 }

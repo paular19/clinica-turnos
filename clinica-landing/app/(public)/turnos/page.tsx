@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function TurnosPage() {
   return (
@@ -28,19 +29,23 @@ export default function TurnosPage() {
         {/* Botones */}
         <div className="px-10 pb-8 space-y-6">
 
-          <button
-            className="w-full py-6 rounded-xl text-white text-lg font-semibold tracking-wide
-                       bg-gradient-to-r from-[#4bbde3] to-[#2b8fb8] shadow-lg hover:shadow-xl transition"
-          >
-            MIS TURNOS
-          </button>
+          <Link href="/turnos/mis-turnos" className="block">
+            <button
+              className="w-full py-6 rounded-xl text-white text-lg font-semibold tracking-wide
+                         bg-gradient-to-r from-[#4bbde3] to-[#2b8fb8] shadow-lg hover:shadow-xl transition"
+            >
+              MIS TURNOS
+            </button>
+          </Link>
 
-          <button
-            className="w-full py-6 rounded-xl text-white text-lg font-semibold tracking-wide
-                       bg-gradient-to-r from-[#5ec8ec] to-[#3da3c7] shadow-lg hover:shadow-xl transition"
-          >
-            SOLICITUD DE TURNO
-          </button>
+          <Link href="/turnos/solicitar" className="block">
+            <button
+              className="w-full py-6 rounded-xl text-white text-lg font-semibold tracking-wide
+                         bg-gradient-to-r from-[#5ec8ec] to-[#3da3c7] shadow-lg hover:shadow-xl transition"
+            >
+              SOLICITUD DE TURNO
+            </button>
+          </Link>
 
         </div>
 

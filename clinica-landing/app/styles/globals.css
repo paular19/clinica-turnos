@@ -1,10 +1,12 @@
 /* Brand variables */
-:root{
+:root {
   --brand-50: #e6f8ff;
   --brand-100: #d6f2fb;
   --brand-200: #b9e9f6;
-  --brand-500: #3ab2e4; /* primary */
-  --brand-600: #256ff3; /* accent */
+  --brand-500: #3ab2e4;
+  /* primary */
+  --brand-600: #256ff3;
+  /* accent */
   --muted: #64748b;
 }
 
@@ -21,7 +23,12 @@
 }
 
 /* Apply primary font to body and provide utility classes for secondary */
-html, body, #__next { height: 100%; }
+html,
+body,
+#__next {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font-primary);
@@ -37,25 +44,53 @@ body {
 }
 
 /* Small utility fallback styles for components that rely on custom CSS */
-.container-max { max-width: 1100px; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
+.container-max {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
 
 /* Buttons fallback if needed */
-.btn-primary { background: var(--brand-500); color: white; padding: 0.6rem 1rem; border-radius: 0.5rem; display:inline-block; font-weight:600; }
+.btn-primary {
+  background: var(--brand-500);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  display: inline-block;
+  font-weight: 600;
+}
 
 /* Animations: keyframes and utilities */
 @keyframes fadeUp {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-fade-up {
-  animation: fadeUp 560ms cubic-bezier(.22,.9,.38,1) both;
+  animation: fadeUp 560ms cubic-bezier(.22, .9, .38, 1) both;
 }
 
 .animate-float {
@@ -63,20 +98,39 @@ body {
 }
 
 /* Utility for stagger: use inline style --stagger to set delay multiplier */
-.stagger > * {
+.stagger>* {
   opacity: 0;
   transform: translateY(10px);
-  animation: fadeUp 520ms cubic-bezier(.22,.9,.38,1) both;
+  animation: fadeUp 520ms cubic-bezier(.22, .9, .38, 1) both;
 }
-.stagger > *:nth-child(1) { animation-delay: calc(var(--stagger, 0) * 0ms + 60ms); }
-.stagger > *:nth-child(2) { animation-delay: calc(var(--stagger, 0) * 0ms + 120ms); }
-.stagger > *:nth-child(3) { animation-delay: calc(var(--stagger, 0) * 0ms + 180ms); }
-.stagger > *:nth-child(4) { animation-delay: calc(var(--stagger, 0) * 0ms + 240ms); }
-.stagger > *:nth-child(5) { animation-delay: calc(var(--stagger, 0) * 0ms + 300ms); }
+
+.stagger>*:nth-child(1) {
+  animation-delay: calc(var(--stagger, 0) * 0ms + 60ms);
+}
+
+.stagger>*:nth-child(2) {
+  animation-delay: calc(var(--stagger, 0) * 0ms + 120ms);
+}
+
+.stagger>*:nth-child(3) {
+  animation-delay: calc(var(--stagger, 0) * 0ms + 180ms);
+}
+
+.stagger>*:nth-child(4) {
+  animation-delay: calc(var(--stagger, 0) * 0ms + 240ms);
+}
+
+.stagger>*:nth-child(5) {
+  animation-delay: calc(var(--stagger, 0) * 0ms + 300ms);
+}
 
 /* Smooth hover shadow and transform */
 .card-animated {
-  transition: transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s cubic-bezier(.2,.9,.3,1);
+  transition: transform .28s cubic-bezier(.2, .9, .3, 1), box-shadow .28s cubic-bezier(.2, .9, .3, 1);
   will-change: transform;
 }
-.card-animated:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 14px 30px rgba(15,23,42,0.08); }
+
+.card-animated:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}

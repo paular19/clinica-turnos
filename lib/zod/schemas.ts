@@ -19,6 +19,17 @@ export const crearTurnoSchema = z.object({
   motivo: z.string().max(500).optional()
 });
 
+// Schema simple para solicitud de turno desde landing
+export const solicitudTurnoSchema = z.object({
+  nombre: z.string().min(2, "El nombre es requerido"),
+  email: z.string().email("Email inválido"),
+  fecha: z.string().min(1, "La fecha es requerida"),
+  hora: z.string().min(1, "La hora es requerida"),
+  especialidad: z.string().min(1, "Selecciona una especialidad")
+});
+
+export type SolicitudTurnoInput = z.infer<typeof solicitudTurnoSchema>;
+
 export const reprogramTurnoSchema = z.object({
   codigo: z.string().min(4).optional(),
   turnoId: z.string().uuid().optional(),

@@ -19,6 +19,11 @@ export async function sendConfirmationEmail(payload: EmailPayload) {
   );
 
   const transporter = createTransporter();
+
+  console.log(`📧 Enviando email de confirmación a: ${to}`);
+  console.log(`   Turno código: ${turno.codigo}`);
+  console.log(`   PDF URL: ${pdfUrl}`);
+
   const info = await transporter.sendMail({
     from: process.env.SMTP_FROM || `no-reply@${process.env.NEXT_PUBLIC_URL?.replace(/^https?:\/\//, "") || "localhost"}`,
     to,
@@ -26,6 +31,12 @@ export async function sendConfirmationEmail(payload: EmailPayload) {
     html,
     text: `Confirmación de turno ${turno.codigo || ""} - ${pdfUrl || ""}`
   });
+
+  if (info.envelope) {
+    console.log(`✅ Email enviado exitosamente a: ${to}`);
+  } else {
+    console.log(`⚠️  Modo desarrollo: Email JSON generado (no enviado):`, JSON.parse(info.message).subject);
+  }
 
   return info.messageId;
 }

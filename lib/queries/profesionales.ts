@@ -11,18 +11,17 @@ export async function listProfesionales(clinicId: string, page = 1, limit = 20, 
       include: { especialidades: true },
       orderBy: { nombre: "asc" },
       skip,
-      take: limit
+      take: limit,
     }),
-    prisma.profesional.count({ where })
+    prisma.profesional.count({ where }),
   ]);
 
   return { data, total, page, limit };
 }
 
 export async function getProfesionalById(id: string, clinicId: string) {
-  const profesional = await prisma.profesional.findFirst({
+  return prisma.profesional.findFirst({
     where: { id, clinicId },
-    include: { horarios: true, especialidades: true, usuario: true }
+    include: { horarios: true, especialidades: true, usuario: true, obraSociales: { include: { obraSocial: true } } },
   });
-  return profesional;
 }

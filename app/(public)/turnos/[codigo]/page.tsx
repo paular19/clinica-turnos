@@ -23,7 +23,7 @@ export default async function TurnoByCodigo({ params }: Props) {
       <p>Fecha: {turno.fecha.toISOString()}</p>
       <p>Profesional: {turno.profesional?.nombre}</p>
       <p>
-        Descargar comprobante: <a href={`/api/turnos/pdf?codigo=${turno.codigo}`}>PDF</a>
+        Descargar comprobante: <a href={`/turnos/${turno.codigo}/download`}>PDF</a>
       </p>
     </div>
   );

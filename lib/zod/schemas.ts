@@ -7,7 +7,7 @@ export const pacienteSchema = z.object({
   dni: z.string().min(6),
   email: z.string().email(),
   telefono: z.string().optional(),
-  obraSocialId: z.string().uuid().optional()
+  obraSocialId: z.union([z.string().uuid(), z.literal("").transform(() => undefined)]).optional()
 });
 
 export const crearTurnoSchema = z.object({

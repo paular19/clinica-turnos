@@ -50,9 +50,9 @@ Input:
 { clinicId, nombre, apellido, dni, email, telefono?, obraSocialId? }
 Response: { pacienteId: string }
 
-API: /api/turnos?codigo=CODE
-- GET returns turno JSON
-- GET with ?pdf=1 returns PDF file
+Server-Side Routes:
+Route: /turnos/[codigo]/download
+- GET: devuelve el PDF de comprobante del turno
 
-API: /api/turnos/export?clinicId=UUID
-- GET returns CSV export for admin usage
+Route: /turnos/export?clinicId=UUID
+- GET: devuelve CSV de turnos de la clínica

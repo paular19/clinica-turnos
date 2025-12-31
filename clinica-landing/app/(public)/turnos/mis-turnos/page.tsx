@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { buscarTurnoPorCodigo, cancelarTurno } from "../../../../lib/actions/mis-turnos-actions";
 
 type Turno = {
     id: string;
@@ -47,14 +48,8 @@ export default function MisTurnosPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(`/api/turnos/buscar?codigo=${codigo.trim()}`);
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || "No se encontró el turno");
-            }
-
-            setTurno(data);
+            const data = await buscarTurnoPorCodigo(codigo.trim());
+            setTurno(data as Turno);
         } catch (err: any) {
             setError(err.message || "Error al buscar el turno");
         } finally {
@@ -74,19 +69,9 @@ export default function MisTurnosPage() {
         setShowCancelModal(false);
 
         try {
-            const res = await fetch("/api/turnos/cancelar", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ codigo: turno.codigo }),
-            });
+            await cancelarTurno(turno.codigo);
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || "Error al cancelar el turno");
-            }
-
-            // Actualizar el estado del turno
+            // Actualizar el estado del turno localmente
             setTurno({ ...turno, estado: "CANCELADO" });
             setSuccessMessage("Turno cancelado exitosamente");
         } catch (err: any) {
@@ -104,15 +89,17 @@ export default function MisTurnosPage() {
                 return "bg-yellow-100 text-yellow-800 border-yellow-300";
             case "CANCELADO":
                 return "bg-red-100 text-red-800 border-red-300";
-            case "COMPLETADO":
+            case "ASISTIDO":
                 return "bg-blue-100 text-blue-800 border-blue-300";
+            case "REPROGRAMADO":
+                return "bg-purple-100 text-purple-800 border-purple-300";
             default:
                 return "bg-gray-100 text-gray-800 border-gray-300";
         }
     };
 
     const puedeSerCancelado = (turno: Turno): boolean => {
-        if (turno.estado === "CANCELADO" || turno.estado === "COMPLETADO") {
+        if (turno.estado === "CANCELADO" || turno.estado === "ASISTIDO") {
             return false;
         }
         const ahora = new Date();
@@ -273,7 +260,7 @@ export default function MisTurnosPage() {
                             </div>
 
                             {/* Advertencia si no se puede cancelar */}
-                            {turno.estado !== "CANCELADO" && turno.estado !== "COMPLETADO" && !puedeSerCancelado(turno) && (
+                            {turno.estado !== "CANCELADO" && turno.estado !== "ASISTIDO" && !puedeSerCancelado(turno) && (
                                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
                                     <p className="text-sm text-orange-800">
                                         <span className="font-semibold">⏰ No se puede cancelar:</span> Debe cancelar con al menos 12 horas de anticipación.

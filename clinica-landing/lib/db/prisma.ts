@@ -8,13 +8,13 @@ declare global {
 }
 
 function makePrismaClient() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("Falta DATABASE_URL en el .env");
-  }
+  const url = process.env.DATABASE_URL;
 
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-  });
+  // ✅ IMPORTANTE: no inicializamos Prisma si no hay DATABASE_URL
+  // (así no explota en build/collect)
+  if (!url) return undefined;
+
+  const adapter = new PrismaPg({ connectionString: url });
 
   return new PrismaClient({
     adapter,
@@ -22,6 +22,18 @@ function makePrismaClient() {
   });
 }
 
-export const prisma: PrismaClient = global.__prisma ?? makePrismaClient();
+/**
+ * Usalo como `const prisma = getPrisma();`
+ * y recién ahí ejecutás queries.
+ */
+export function getPrisma(): PrismaClient {
+  if (global.__prisma) return global.__prisma;
 
-if (process.env.NODE_ENV !== "production") global.__prisma = prisma;
+  const client = makePrismaClient();
+  if (!client) {
+    throw new Error("DATABASE_URL no está configurada en el entorno.");
+  }
+
+  global.__prisma = client;
+  return client;
+}

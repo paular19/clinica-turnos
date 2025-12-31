@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 interface Props {
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;

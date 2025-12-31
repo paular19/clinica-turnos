@@ -211,9 +211,10 @@ export default async function HorarioPage({ searchParams }: Props) {
     select: { fecha: true },
   });
 
-  const fechasOcupadas = new Set(
-    turnosExistentes.map((t) => t.fecha.toISOString())
-  );
+ const fechasOcupadas = new Set(
+  turnosExistentes.map((t: (typeof turnosExistentes)[number]) => t.fecha.toISOString())
+);
+
 
   const slotsDisponibles = slots.filter((s) => !fechasOcupadas.has(s.fechaISO));
 

@@ -1,8 +1,12 @@
-# 🏗️ Arquitectura del Proyecto - Monorepo
+# 🏗️ Arquitectura del Proyecto - Monorepo con Proyectos Independientes
 
-Este es un **monorepo** con dos aplicaciones Next.js independientes:
-1. **App Principal** (raíz `/`) - Sistema administrativo y de gestión
-2. **Landing Clínica** (`/clinica-landing`) - Sitio público con formulario de solicitud
+Este es un **monorepo** con dos aplicaciones Next.js completamente independientes:
+1. **clinica-admin** (`/clinica-admin`) - Sistema administrativo y de gestión
+2. **clinica-landing** (`/clinica-landing`) - Sitio público con formulario de solicitud
+
+Ambos proyectos comparten:
+- Carpeta `/lib` - Lógica compartida (actions, queries, utils)
+- Carpeta `/prisma` - Schema y migraciones de base de datos
 
 ---
 
@@ -11,11 +15,10 @@ Este es un **monorepo** con dos aplicaciones Next.js independientes:
 ```
 clinica-turnos/
 │
-├── 📁 lib/                           [COMPARTIDO] Lógica del admin
+├── 📁 lib/                           [COMPARTIDO] Lógica reutilizable
 │   ├── actions/
 │   │   ├── serverAdmin.ts           ← Acciones admin (crear profesionales, especialidades)
-│   │   ├── serverTurnos.ts          ← Acciones turnos admin (crear, editar, cancelar)
-│   │   │   └── solicitudTurnoPublica() ← Acción pública para landing
+│   │   ├── turnos.ts                ← Acciones turnos admin (crear, editar, cancelar)
 │   │   └── index.ts
 │   ├── queries/
 │   │   ├── turnos.ts                ← Queries: listar, filtrar turnos
@@ -31,48 +34,47 @@ clinica-turnos/
 │   │   └── prisma.ts                ← Cliente Prisma
 │   └── utils/
 │
-├── 📁 app/                           [APP ADMIN] Sistema administrativo
-│   ├── (auth)/
-│   ├── (dashboard)/
-│   │   ├── admin/
-│   │   ├── medico/
-│   │   └── paciente/
-│   ├── api/                          ← Rutas API (si necesarias)
-│   └── layout.tsx
-│
-├── 📁 prisma/                        ← Esquema ORM (compartido)
+├── 📁 prisma/                        [COMPARTIDO] Esquema ORM
 │   ├── schema.prisma
-│   └── migrations/
+│   ├── migrations/
+│   └── seed.ts
 │
-├── 📁 clinica-landing/               [LANDING PÚBLICA]
-│   ├── package.json                 ← Dependencies: next, react (mínimas)
+├── 📁 clinica-admin/                 [PROYECTO 1 - ADMIN]
+│   ├── package.json                 ← Dependencies: next, react, clerk, etc.
+│   ├── tsconfig.json                ← Alias @/lib/* → ../lib/*
+│   ├── next.config.js
+│   ├── .env                         ← Variables admin
 │   ├── app/
-│   │   ├── (public)/
-│   │   │   ├── page.tsx             ← Home
-│   │   │   └── turnos/
-│   │   │       ├── page.tsx         ← Hub de turnos (enlaces)
-│   │   │       ├── solicitar/
-│   │   │       │   ├── page.tsx     ← Formulario solicitud
-│   │   │       │   └── components/TurnoForm.tsx
-│   │   │       └── confirmacion/
-│   │   │           └── page.tsx     ← Validar código turno
-│   │   └── components/              ← Componentes landing
-│   │
+│   │   ├── (auth)/                  ← Login con Clerk
+│   │   ├── (public)/                ← Páginas públicas (si necesarias)
+│   │   ├── (dashboard)/             ← Dashboard admin
+│   │   │   ├── admin/
+│   │   │   ├── medico/
+│   │   │   └── paciente/
+│   │   └── layout.tsx
+│   └── components/                  ← Componentes admin
+│
+├── 📁 clinica-landing/               [PROYECTO 2 - LANDING]
+│   ├── package.json                 ← Dependencies: next, react (mínimas)
+│   ├── tsconfig.json                ← Alias @/lib/* → ../lib/*
+│   ├── next.config.js
+│   ├── .env                         ← Variables landing
+│   ├── app/
+│   │   └── (public)/
+│   │       ├── page.tsx             ← Home
+│   │       └── turnos/
+│   │           ├── page.tsx         ← Hub de turnos
+│   │           ├── solicitar/       ← Formulario solicitud
+│   │           ├── mis-turnos/      ← Consultar turnos
+│   │           └── confirmacion/    ← Validar código turno
 │   ├── lib/
 │   │   └── actions/
-│   │       └── turnos.ts            ← Envoltorio que importa desde raíz
-│   │                                  (TODO: Considerar usar monorepo workspace)
-│   │
-│   └── styles/
+│   │       └── mis-turnos-actions.ts ← Server actions específicas
+│   └── components/                  ← Componentes landing
 │
-├── 📁 tests/                         ← Tests
-│
-├── 📄 package.json                   [RAÍZ] App admin
-├── 📄 package-lock.json
-├── 📄 tsconfig.json
-├── 📄 next.config.js
-│
-└── 📄 ARCHITECTURE.md               ← Este archivo
+├── 📄 DEPLOYMENT_GUIDE.md           ← Guía de deployment en Vercel
+├── 📄 ARCHITECTURE.md               ← Este archivo
+└── 📄 README.md
 ```
 
 ---
@@ -85,81 +87,7 @@ clinica-turnos/
 ```typescript
 // ✅ EN /lib/actions/serverTurnos.ts
 export async function crearTurno(data: CrearTurnoInput) 
-  // Acción ADMIN: crear turno completo con paciente + profesional
 
-export async function cancelarTurno(input: CancelarTurnoInput)
-  // Acción ADMIN: cancelar turno
-
-export async function reprogramarTurno(input: ReprogramTurnoInput)
-  // Acción ADMIN: reprogramar turno
-
-export async function solicitudTurnoPublica(formData: FormData)
-  // ⭐ Acción PÚBLICA: crear turno simple desde landing
-  // Crea paciente automático + turno sin profesional asignado (admin lo asigna)
-```
-
-### `/app` (Raíz - APP ADMIN)
-**Sistema administrativo completo**
-
-- Dashboard de admin
-- Gestión de turnos (crear, editar, cancelar, reprogramar)
-- Gestión de profesionales
-- Gestión de pacientes
-- Reports
-
-### `/clinica-landing` (LANDING PÚBLICA)
-**Solo sitio web público con formulario de solicitud**
-
-- Página principal
-- Galería, servicios, equipo
-- Formulario: "Solicitar Turno"
-  - Recolecta: nombre, email, fecha, hora, especialidad
-  - Llama a `solicitudTurnoPublica()` desde raíz
-  - Turno se guarda sin profesional (admin lo asigna)
-
----
-
-## 🔄 Flujo: Solicitud de Turno (Landing)
-
-```
-1. Usuario en clinica-landing/app/(public)/turnos/solicitar
-   └─ Completa TurnoForm.tsx
-
-2. TurnoForm.tsx envía FormData a acción:
-   └─ clinica-landing/lib/actions/turnos.ts::solicitudTurno()
-
-3. Acción valida con Zod:
-   ✓ nombre (string, min 2)
-   ✓ email (válido)
-   ✓ fecha (date)
-   ✓ hora (time)
-   ✓ especialidad (string)
-
-4. Si es válido, llamaría a:
-   └─ /lib/actions/serverTurnos.ts::solicitudTurnoPublica()
-      (Actualmente solo logea - TODO implementar)
-
-5. serverTurnoPublica() hace:
-   ├─ Busca o crea Paciente (por email)
-   ├─ Busca Especialidad
-   ├─ Crea Turno (sin profesional asignado)
-   ├─ Envía email de confirmación
-   └─ Retorna { success, codigo, message }
-
-6. Usuario recibe confirmación:
-   └─ "Solicitud recibida. Código: ABC123"
-```
-
----
-
-## ⚙️ Flujo: Crear Turno (Admin)
-
-```
-1. Admin en /app/dashboard/turnos/crear
-   └─ Completa formulario completo
-
-2. Envía a acción admin:
-   └─ /lib/actions/serverTurnos.ts::crearTurno()
 
 3. Acción ADMIN hace:
    ├─ Valida datos completos con Zod
@@ -175,18 +103,27 @@ export async function solicitudTurnoPublica(formData: FormData)
 
 ## 🚀 Despliegue
 
-### App Admin (Raíz)
+### Proyectos Independientes en Vercel
+
+Cada proyecto se deploya por separado en Vercel:
+
+#### clinica-admin
 ```bash
-# En Vercel, configurar:
-# Root Directory: . (raíz)
+# En Vercel:
+# Project Name: clinica-admin
+# Root Directory: clinica-admin
+# Framework: Next.js
 ```
 
-### Landing (clinica-landing)
+#### clinica-landing
 ```bash
-# En Vercel, crear nuevo proyecto:
+# En Vercel:
+# Project Name: clinica-landing
 # Root Directory: clinica-landing
-# Environment: Heredar de app admin (misma DB)
+# Framework: Next.js
 ```
+
+**Ver [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) para instrucciones completas**
 
 ---
 
@@ -207,23 +144,25 @@ export async function solicitudTurnoPublica(formData: FormData)
 
 ## 🔗 Importaciones
 
-### Desde Landing hacia Raíz (⚠️ Limitado)
+### Desde clinica-admin
 ```typescript
-// ❌ EVITAR (imports relativos no resuelven bien en monorepo)
-import { solicitudTurno } from "../../../lib/actions/turnos"
-
-// ✅ ALTERNATIVA ACTUAL (duplicar con comentario)
-// clinica-landing/lib/actions/turnos.ts
-// Nota: Duplica lógica de raíz. Considerar npm workspaces para mejorar.
-```
-
-### Desde App Admin (Raíz)
-```typescript
-// ✅ BIEN (path local)
+// ✅ Importar desde lib compartida usando alias
 import { prisma } from "@/lib/db/prisma"
 import { solicitudTurnoSchema } from "@/lib/zod/schemas"
-import { crearTurno } from "@/lib/actions/serverTurnos"
+import { crearTurno } from "@/lib/actions/turnos"
 ```
+
+### Desde clinica-landing
+```typescript
+// ✅ Importar desde lib compartida usando alias
+import { prisma } from "@/lib/db/prisma"
+import { buscarTurnoPorCodigo } from "@/lib/actions/mis-turnos-actions"
+
+// ✅ O importar desde lib local (server actions específicas)
+import { cancelarTurno } from "../../../../lib/actions/mis-turnos-actions"
+```
+
+**Nota:** Ambos proyectos tienen configurado el alias `@/lib/*` → `../lib/*` en sus `tsconfig.json`
 
 ---
 
@@ -256,7 +195,16 @@ import { crearTurno } from "@/lib/actions/serverTurnos"
 
 ## 📝 TODO
 
-- [ ] Implementar `solicitudTurnoPublica()` completo en landing
-- [ ] Considerar usar npm workspaces (`clinica-landing` como workspace)
-- [ ] Documentar variables de entorno (.env.example)
-- [ ] Agregar tests para acciones
+- [ ] Configurar dominios personalizados en Vercel
+- [ ] Implementar CI/CD para tests automáticos
+- [ ] Documentar variables de entorno en .env.example
+- [ ] Agregar tests para acciones compartidas
+- [ ] Considerar extraer `/lib` a un paquete npm privado
+
+---
+
+## 📚 Ver También
+
+- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - Guía completa de deployment
+- [ARCHITECTURE_FLOWS.md](ARCHITECTURE_FLOWS.md) - Flujos de la aplicación
+- [README.md](README.md) - Documentación general

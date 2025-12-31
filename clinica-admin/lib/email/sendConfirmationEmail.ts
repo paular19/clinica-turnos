@@ -13,7 +13,7 @@ type EmailPayload = {
 export async function sendConfirmationEmail(payload: EmailPayload) {
   const { to, turno, paciente, pdfUrl } = payload;
 
-  const html = render(
+  const html = await render(
     // @ts-ignore - React Email component
     ConfirmationEmail({ turno, paciente, pdfUrl })
   );
@@ -35,7 +35,7 @@ export async function sendConfirmationEmail(payload: EmailPayload) {
   if (info.envelope) {
     console.log(`✅ Email enviado exitosamente a: ${to}`);
   } else {
-    console.log(`⚠️  Modo desarrollo: Email JSON generado (no enviado):`, JSON.parse(info.message).subject);
+    console.log(`⚠️  Modo desarrollo: Email JSON generado (no enviado) - Message ID: ${info.messageId}`);
   }
 
   return info.messageId;

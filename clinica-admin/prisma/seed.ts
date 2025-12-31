@@ -1,6 +1,5 @@
 
 // prisma/seed.ts
-import "dotenv/config";
 import { PrismaClient, Rol } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 

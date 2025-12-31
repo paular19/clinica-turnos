@@ -2,6 +2,7 @@
 
 import { prisma } from "../db/prisma";
 import { crearProfesionalSchema, crearEspecialidadSchema, registrarPacienteSchema } from "../zod/schemas";
+import { Rol } from "@prisma/client";
 import { z } from "zod";
 import { sanitizeString } from "../utils/sanitize";
 
@@ -9,14 +10,30 @@ export async function crearProfesional(input: any) {
   try {
     const parsed = crearProfesionalSchema.parse(input);
     const nombre = sanitizeString(parsed.nombre);
-    // create profesional and related horarios & especialidades association
+
+    // Crear usuario si existe clerkId
+    let usuarioId: string | undefined;
+    if (parsed.clerkId) {
+      const usuario = await prisma.usuario.create({
+        data: {
+          clerkId: parsed.clerkId,
+          nombre,
+          email: `${parsed.clerkId}@example.com`,
+          rol: Rol.MEDICO,
+          clinicId: parsed.clinicId
+        }
+      });
+      usuarioId = usuario.id;
+    }
+
+    // Crear profesional
     const profesional = await prisma.profesional.create({
       data: {
         nombre,
         matricula: parsed.matricula,
         fotoUrl: parsed.fotoUrl || undefined,
         clinicId: parsed.clinicId,
-        usuario: parsed.clerkId ? { create: { clerkId: parsed.clerkId, nombre, email: `${parsed.clerkId}@example.com`, rol: "MEDICO", clinicId: parsed.clinicId } } : undefined,
+        usuarioId,
         horarios: {
           create: parsed.horarios?.map((h: any) => ({
             diaSemana: h.diaSemana,
@@ -49,7 +66,6 @@ export async function crearEspecialidad(input: any) {
     const especialidad = await prisma.especialidad.create({
       data: {
         nombre: sanitizeString(parsed.nombre),
-        duracion: parsed.duracion,
         descripcion: parsed.descripcion,
         clinicId: parsed.clinicId
       }

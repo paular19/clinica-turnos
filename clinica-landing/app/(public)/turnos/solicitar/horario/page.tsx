@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { crearTurno } from "../../../../../../lib/actions/turnos";
+import { crearTurno } from "../../../../../../lib/actions/serverTurnos";
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../../../lib/db/prisma";
 

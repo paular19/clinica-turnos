@@ -17,6 +17,12 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@/lib/*": [
+        "../lib/*"
+      ],
       "@components/*": [
         "components/*"
       ]
@@ -33,7 +39,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "../lib/**/*.ts"
   ],
   "exclude": [
     "node_modules"

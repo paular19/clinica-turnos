@@ -159,7 +159,8 @@ export default async function HorarioPage({ searchParams }: Props) {
     const diaSemana = isoDow(fecha);
 
     // Buscar horarios para este día
-    const horariosDelDia = horarios.filter((h) => h.diaSemana === diaSemana);
+    const horariosDelDia = horarios.filter((h: (typeof horarios)[number]) => h.diaSemana === diaSemana);
+
 
     for (const horario of horariosDelDia) {
       const [horaInicio, minInicio] = horario.horaInicio.split(":").map(Number);

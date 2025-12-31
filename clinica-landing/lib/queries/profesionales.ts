@@ -1,4 +1,6 @@
-import { prisma } from "../db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 export async function listProfesionales(clinicId: string, page = 1, limit = 20, search?: string) {
   const skip = (page - 1) * limit;

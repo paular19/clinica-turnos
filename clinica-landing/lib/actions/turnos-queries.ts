@@ -1,7 +1,9 @@
 "use server";
 
-import { prisma } from "../db/prisma";
+
 import { listEspecialidadesPublic, listObrasSocialesByEspecialidad, listProfesionalesByEspecialidadYObra } from "../queries/public-turnos";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
 
 // Obtener todas las obras sociales disponibles
 export async function listObrasSociales() {

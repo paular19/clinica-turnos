@@ -1,5 +1,8 @@
-import { prisma } from "../db/prisma";
+
 import { Prisma, TurnoEstado } from "@prisma/client";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 type TurnosAdminParams = {
   clinicId: string;

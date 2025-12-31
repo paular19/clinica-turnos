@@ -1,6 +1,8 @@
 "use server";
 
-import { prisma } from "../db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 import { crearProfesionalSchema, crearEspecialidadSchema, registrarPacienteSchema } from "../zod/schemas";
 import { Rol } from "@prisma/client";
 import { z } from "zod";

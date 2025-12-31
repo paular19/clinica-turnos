@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "../db/prisma";
+
 import {
   crearTurnoSchema,
   CrearTurnoInput,
@@ -15,6 +15,9 @@ import { revalidatePaths } from "../utils/revalidate";
 import { getTurnoByCodigo } from "../queries/turnos";
 import { generateComprobantePDF } from "../pdf/generateComprobante";
 import { z } from "zod";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 /* ---------------------------- Helpers ---------------------------- */
 

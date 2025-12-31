@@ -1,4 +1,6 @@
-import { prisma } from "../db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 export async function listEspecialidades(clinicId: string) {
   return prisma.especialidad.findMany({

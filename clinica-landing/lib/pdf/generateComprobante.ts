@@ -1,5 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { prisma } from "../db/prisma";
+import { getPrisma } from "@/lib/db/prisma";
+const prisma = getPrisma();
+
 
 export async function generateComprobantePDF(turnoId: string, clinicId?: string) {
   // fetch turno with relations

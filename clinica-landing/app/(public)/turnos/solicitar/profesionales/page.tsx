@@ -2,6 +2,9 @@ import { listProfesionalesPorObraSocialYEspecialidad } from "@/lib/actions/turno
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 interface Props {
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }

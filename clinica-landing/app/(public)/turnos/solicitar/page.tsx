@@ -2,6 +2,9 @@ import { listObrasSociales } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 /**
  * Paso 1: Formulario inicial de solicitud de turno
  * Recoge datos del paciente y obra social

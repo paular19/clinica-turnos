@@ -1,7 +1,8 @@
 import { listEspecialidadesPorObraSocial } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }

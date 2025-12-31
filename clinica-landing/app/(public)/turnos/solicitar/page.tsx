@@ -1,4 +1,4 @@
-import { listObrasSociales } from "lib/actions/turnos-queries";
+import { listObrasSociales } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -121,7 +121,7 @@ export default async function SolicitarTurnoPage() {
               className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#4bbde3] focus:border-transparent outline-none transition bg-white"
             >
               <option value="">Seleccioná tu obra social</option>
-              {obrasSociales.map((os) => (
+              {obrasSociales.map((os: any) => (
                 <option key={os.id} value={os.id}>
                   {os.nombre}
                 </option>

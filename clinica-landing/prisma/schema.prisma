@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+
+model Clinic {
+  id                      String                  @id @default(uuid())
+  name                    String
+  address                 String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  users                   Usuario[]
+  profesionales           Profesional[]
+  especialidades          Especialidad[]
+  pacientes               Paciente[]
+  turnos                  Turno[]
+  configuracion           Configuracion?
+  obraSociales            ObraSocial[]
+  horarios                Horario[]
+  profesionalObraSociales ProfesionalObraSocial[]
+}
+
+model Usuario {
+  id          String       @id @default(uuid())
+  clerkId     String       @unique
+  nombre      String
+  email       String       @unique
+  rol         Rol
+  clinicId    String
+  clinic      Clinic       @relation(fields: [clinicId], references: [id])
+  profesional Profesional?
+
+  @@index([clinicId])
+}
+
+model Profesional {
+  id             String                  @id @default(uuid())
+  nombre         String
+  matricula      String?                  @unique
+  fotoUrl        String?
+  usuarioId      String?                 @unique
+  usuario        Usuario?                @relation(fields: [usuarioId], references: [id])
+  clinicId       String
+  clinic         Clinic                  @relation(fields: [clinicId], references: [id])
+  especialidades Especialidad[]          @relation("ProfesionalEspecialidad")
+  horarios       Horario[]
+  turnos         Turno[]
+  obraSociales   ProfesionalObraSocial[]
+
+  @@index([clinicId])
+}
+
+model Especialidad {
+  id            String        @id @default(uuid())
+  nombre        String
+  descripcion   String?
+  profesionales Profesional[] @relation("ProfesionalEspecialidad")
+  clinicId      String
+  clinic        Clinic        @relation(fields: [clinicId], references: [id])
+  turnos        Turno[]
+
+  @@unique([nombre, clinicId])
+}
+
+model Horario {
+  id            String      @id @default(uuid())
+  diaSemana     Int
+  horaInicio    String
+  horaFin       String
+  intervaloMin  Int
+  profesionalId String
+  profesional   Profesional @relation(fields: [profesionalId], references: [id])
+  clinicId      String
+  clinic        Clinic      @relation(fields: [clinicId], references: [id])
+
+  @@index([profesionalId, clinicId])
+}
+
+model Paciente {
+  id           String      @id @default(uuid())
+  nombre       String
+  apellido     String
+  dni          String
+  email        String
+  telefono     String?
+  obraSocialId String?
+  obraSocial   ObraSocial? @relation(fields: [obraSocialId], references: [id])
+  clinicId     String
+  clinic       Clinic      @relation(fields: [clinicId], references: [id])
+  turnos       Turno[]
+
+  @@unique([dni, clinicId])
+  @@index([obraSocialId])
+  @@unique([email, clinicId])
+  @@index([clinicId])
+}
+
+model Turno {
+  id             String       @id @default(uuid())
+  fecha          DateTime
+  estado         TurnoEstado
+  motivo         String?
+  codigo         String       @unique
+  pacienteId     String
+  paciente       Paciente     @relation(fields: [pacienteId], references: [id])
+  profesionalId  String
+  profesional    Profesional  @relation(fields: [profesionalId], references: [id])
+  especialidadId String
+  especialidad   Especialidad @relation(fields: [especialidadId], references: [id])
+  createdAt      DateTime     @default(now())
+  clinicId       String
+  clinic         Clinic       @relation(fields: [clinicId], references: [id])
+
+  @@index([fecha, profesionalId, pacienteId, estado, clinicId])
+}
+
+model Configuracion {
+  id               String @id @default(uuid())
+  anticipacionMin  Int
+  intervaloDefault Int
+  clinicId         String @unique
+  clinic           Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model ObraSocial {
+  id            String                  @id @default(uuid())
+  nombre        String
+  activa        Boolean                 @default(true)
+  clinicId      String
+  clinic        Clinic                  @relation(fields: [clinicId], references: [id])
+  pacientes     Paciente[]
+  profesionales ProfesionalObraSocial[]
+
+  @@unique([nombre, clinicId])
+  @@index([clinicId])
+}
+
+model ProfesionalObraSocial {
+  profesionalId String
+  obraSocialId  String
+  clinicId      String
+  profesional   Profesional @relation(fields: [profesionalId], references: [id])
+  obraSocial    ObraSocial  @relation(fields: [obraSocialId], references: [id])
+  clinic        Clinic      @relation(fields: [clinicId], references: [id])
+
+  @@id([profesionalId, obraSocialId])
+  @@index([clinicId])
+}
+
+enum Rol {
+  ADMIN
+  MEDICO
+}
+
+enum TurnoEstado {
+  PENDIENTE
+  CONFIRMADO
+  ASISTIDO
+  CANCELADO
+  REPROGRAMADO
+}

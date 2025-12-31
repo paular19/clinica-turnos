@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { buscarTurnoPorCodigo, cancelarTurno } from "../../../../lib/actions/mis-turnos-actions";
+import { buscarTurnoPorCodigo, cancelarTurno } from "@/lib/actions/mis-turnos-actions";
 
 type Turno = {
     id: string;
     codigo: string;
-    fecha: string;
+    fecha: Date | string;
     estado: string;
     motivo?: string | null;
     paciente: {

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { crearTurno } from "../../../../../../lib/actions/serverTurnos";
+import { crearTurno } from "@/lib/actions/serverTurnos";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../../../../lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 
 interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -29,24 +29,40 @@ async function handleSubmitTurno(formData: FormData) {
     const profesionalId = (formData.get("profesionalId") as string) || "";
     const fechaHora = (formData.get("fechaHora") as string) || ""; // ISO string completo
 
+    console.log("Form data received:", {
+      nombre,
+      email,
+      dni,
+      obraSocialId,
+      especialidadId,
+      profesionalId,
+      fechaHora
+    });
+
     const dniTrim = dni.trim();
     if (dniTrim.length < 6) {
       throw new Error("DNI inválido (mínimo 6 dígitos).");
+    }
+
+    if (!profesionalId || !especialidadId || !obraSocialId) {
+      throw new Error("Faltan datos requeridos. Por favor vuelva a comenzar el proceso.");
     }
 
     // Obtener clinicId de la primera clínica (default)
     const clinic = await prisma.clinic.findFirst();
     if (!clinic) throw new Error("No clinic found");
 
+    console.log("Clinic ID:", clinic.id);
+
     // Separar nombre y apellido (asumiendo formato "Nombre Apellido")
     const nombreCompleto = nombre.trim().split(" ").filter(Boolean);
     const primerNombre = nombreCompleto[0] ?? "";
     const apellido = nombreCompleto.slice(1).join(" ") || primerNombre;
 
-    const result = await crearTurno({
+    const turnoData = {
       clinicId: clinic.id,
-      profesionalId,
-      especialidadId,
+      profesionalId: profesionalId.trim(),
+      especialidadId: especialidadId.trim(),
       fecha: fechaHora,
       motivo: "Solicitud web desde landing",
       paciente: {
@@ -55,9 +71,13 @@ async function handleSubmitTurno(formData: FormData) {
         dni: dniTrim,
         email,
         telefono: "",
-        obraSocialId: obraSocialId || undefined,
+        obraSocialId: obraSocialId.trim() || undefined,
       },
-    });
+    };
+
+    console.log("Creating turno with data:", turnoData);
+
+    const result = await crearTurno(turnoData);
 
     redirect(`/turnos/confirmacion?codigo=${result.codigo}`);
   } catch (error: any) {

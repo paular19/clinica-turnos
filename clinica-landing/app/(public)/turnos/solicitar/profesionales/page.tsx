@@ -1,4 +1,4 @@
-import { listProfesionalesPorObraSocialYEspecialidad } from "lib/actions/turnos-queries";
+import { listProfesionalesPorObraSocialYEspecialidad } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -30,7 +30,7 @@ export default async function ProfesionalesPage({ searchParams }: Props) {
                 <p className="text-sm text-slate-600 mb-6">Mostrando profesionales que atienden la obra social seleccionada y la especialidad elegida.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {profesionales.map((prof) => (
+                    {profesionales.map((prof: any) => (
                         <div key={prof.id} className="flex gap-4 p-4 border rounded-lg items-center">
                             {prof.fotoUrl ? (
                                 <img src={prof.fotoUrl} alt={prof.nombre} className="w-20 h-20 rounded-full object-cover" />

@@ -1,4 +1,4 @@
-import { listEspecialidadesPorObraSocial } from "lib/actions/turnos-queries";
+import { listEspecialidadesPorObraSocial } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -75,7 +75,7 @@ export default async function EspecialidadPage({ searchParams }: Props) {
               className="mt-1 block w-full rounded-md border border-slate-300 p-3 bg-white"
             >
               <option value="">Seleccioná</option>
-              {especialidades.map((e) => (
+              {especialidades.map((e: any) => (
                 <option key={e.id} value={e.id}>
                   {e.nombre}
                 </option>

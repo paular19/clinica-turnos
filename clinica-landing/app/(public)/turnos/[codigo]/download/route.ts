@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateComprobantePDF } from "../../../../../../lib/pdf/generateComprobante";
-import { prisma } from "../../../../../../lib/db/prisma";
+import { generateComprobantePDF } from "@/lib/pdf/generateComprobante";
+import { prisma } from "@/lib/db/prisma";
 
 export async function GET(
     request: NextRequest,

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getPrisma } from "@/lib/db/prisma";
 const prisma = getPrisma();
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 interface Props {
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;

@@ -1,6 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { exportTurnosCSV } from "../../../../lib/actions/serverTurnos";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
     try {
         const url = new URL(request.url);

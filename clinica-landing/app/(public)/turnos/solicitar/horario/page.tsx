@@ -10,9 +10,6 @@ interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// ✅ ClinicId donde cargaste el seed en Neon
-const CLINIC_ID_PUBLIC = "406fc3e2-342a-4871-b52a-d63f95be4072";
-
 // Mapeo de días ISO (1=Lun, 7=Dom)
 function isoDow(date: Date) {
   const d = date.getDay(); // 0..6 (Dom..Sáb)
@@ -21,58 +18,61 @@ function isoDow(date: Date) {
 
 /**
  * Paso 4: Selección de fecha y hora
- * Recibe todos los datos previos por query params y crea el turno en la DB
  */
 async function handleSubmitTurno(formData: FormData) {
   "use server";
 
+  const prisma = getPrisma();
+
   try {
-    const nombre = (formData.get("nombre") as string) || "";
-    const email = (formData.get("email") as string) || "";
-    const dni = (formData.get("dni") as string) || "";
-    const obraSocialId = (formData.get("obraSocialId") as string) || "";
-    const especialidadId = (formData.get("especialidadId") as string) || "";
-    const profesionalId = (formData.get("profesionalId") as string) || "";
-    const fechaHoraISO = (formData.get("fechaHora") as string) || ""; // ISO string completo
+    const nombre = ((formData.get("nombre") as string) || "").trim();
+    const email = ((formData.get("email") as string) || "").trim();
+    const dni = ((formData.get("dni") as string) || "").trim();
+    const obraSocialId = ((formData.get("obraSocialId") as string) || "").trim();
+    const especialidadId = ((formData.get("especialidadId") as string) || "").trim();
+    const profesionalId = ((formData.get("profesionalId") as string) || "").trim();
+    const fechaHoraISO = ((formData.get("fechaHora") as string) || "").trim();
 
-    const dniTrim = dni.trim();
-    if (dniTrim.length < 6) throw new Error("DNI inválido (mínimo 6 dígitos).");
-
+    if (dni.length < 6) throw new Error("DNI inválido (mínimo 6 dígitos).");
     if (!profesionalId || !especialidadId || !obraSocialId || !fechaHoraISO) {
       throw new Error("Faltan datos requeridos. Volvé a comenzar el proceso.");
     }
 
     // Validar fecha ISO
     const fechaDate = new Date(fechaHoraISO);
-    if (Number.isNaN(fechaDate.getTime())) {
-      throw new Error("Fecha/Hora inválida.");
-    }
+    if (Number.isNaN(fechaDate.getTime())) throw new Error("Fecha/Hora inválida.");
 
-    // Separar nombre y apellido (asumiendo formato "Nombre Apellido")
-    const nombreCompleto = nombre.trim().split(" ").filter(Boolean);
-    const primerNombre = nombreCompleto[0] ?? "";
-    const apellido = nombreCompleto.slice(1).join(" ") || primerNombre;
+    // ✅ Fuente de verdad: clinicId del profesional
+    const profesional = await prisma.profesional.findUnique({
+      where: { id: profesionalId },
+      select: { id: true, clinicId: true },
+    });
+    if (!profesional) throw new Error("Profesional no encontrado.");
+
+    // Separar nombre y apellido
+    const partes = nombre.split(" ").filter(Boolean);
+    const primerNombre = partes[0] ?? "";
+    const apellido = partes.slice(1).join(" ") || primerNombre;
 
     const turnoData = {
-      clinicId: CLINIC_ID_PUBLIC,
-      profesionalId: profesionalId.trim(),
-      especialidadId: especialidadId.trim(),
-      fecha: fechaDate.toISOString(), // ✅ string como espera crearTurno
+      clinicId: profesional.clinicId,
+      profesionalId,
+      especialidadId,
+      fecha: fechaDate.toISOString(), // ✅ string como espera crearTurno()
       motivo: "Solicitud web desde landing",
       paciente: {
         nombre: primerNombre,
         apellido,
-        dni: dniTrim,
+        dni,
         email,
         telefono: "",
-        obraSocialId: obraSocialId.trim() || undefined,
+        obraSocialId: obraSocialId || undefined,
       },
     };
 
     const result = await crearTurno(turnoData);
-
     redirect(`/turnos/confirmacion?codigo=${result.codigo}`);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creando turno:", error);
     throw error;
   }
@@ -80,29 +80,20 @@ async function handleSubmitTurno(formData: FormData) {
 
 export default async function HorarioPage({ searchParams }: Props) {
   const prisma = getPrisma();
-
   const sp = (await searchParams) ?? {};
 
-  const nombre = Array.isArray(sp.nombre) ? sp.nombre[0] : sp.nombre || "";
-  const email = Array.isArray(sp.email) ? sp.email[0] : sp.email || "";
-  const dni = Array.isArray(sp.dni) ? sp.dni[0] : sp.dni || "";
-  const obraSocialId = Array.isArray(sp.obraSocialId)
-    ? sp.obraSocialId[0]
-    : sp.obraSocialId || "";
-  const especialidadId = Array.isArray(sp.especialidadId)
-    ? sp.especialidadId[0]
-    : sp.especialidadId || "";
-  const profesionalId = Array.isArray(sp.profesionalId)
-    ? sp.profesionalId[0]
-    : sp.profesionalId || "";
+  const nombre = ((Array.isArray(sp.nombre) ? sp.nombre[0] : sp.nombre) || "").toString().trim();
+  const email = ((Array.isArray(sp.email) ? sp.email[0] : sp.email) || "").toString().trim();
+  const dni = ((Array.isArray(sp.dni) ? sp.dni[0] : sp.dni) || "").toString().trim();
+  const obraSocialId = ((Array.isArray(sp.obraSocialId) ? sp.obraSocialId[0] : sp.obraSocialId) || "").toString().trim();
+  const especialidadId = ((Array.isArray(sp.especialidadId) ? sp.especialidadId[0] : sp.especialidadId) || "").toString().trim();
+  const profesionalId = ((Array.isArray(sp.profesionalId) ? sp.profesionalId[0] : sp.profesionalId) || "").toString().trim();
 
   if (!nombre || !email || !dni || !obraSocialId || !especialidadId || !profesionalId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4">
-            Parámetros incompletos
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Parámetros incompletos</h2>
           <p className="text-slate-600 mb-4">Volvé al inicio del flujo.</p>
           <Link href="/turnos" className="text-[var(--brand-500)] hover:underline">
             Volver al inicio
@@ -112,12 +103,30 @@ export default async function HorarioPage({ searchParams }: Props) {
     );
   }
 
-  // ✅ Obtener horarios del profesional (misma clínica seed)
+  // ✅ Buscar profesional para obtener clinicId real
+  const profesional = await prisma.profesional.findUnique({
+    where: { id: profesionalId },
+    select: { id: true, clinicId: true },
+  });
+
+  if (!profesional) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-slate-800 mb-4">Profesional no encontrado</h2>
+          <Link href="/turnos" className="text-[#4bbde3] hover:underline">
+            Volver
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const clinicId = profesional.clinicId;
+
+  // ✅ Horarios del profesional (con clinicId verdadero)
   const horarios = await prisma.horario.findMany({
-    where: {
-      clinicId: CLINIC_ID_PUBLIC,
-      profesionalId,
-    },
+    where: { clinicId, profesionalId },
     orderBy: { diaSemana: "asc" },
   });
 
@@ -150,7 +159,6 @@ export default async function HorarioPage({ searchParams }: Props) {
         const fechaSlot = new Date(fechaBase);
         fechaSlot.setHours(hh, mm, 0, 0);
 
-        // Solo agregar si es futuro
         if (fechaSlot > new Date()) {
           const diaStr = new Intl.DateTimeFormat("es-AR", {
             weekday: "short",
@@ -173,11 +181,11 @@ export default async function HorarioPage({ searchParams }: Props) {
     }
   }
 
-  // Verificar turnos ya ocupados
+  // Turnos ya ocupados
   const turnosExistentes = await prisma.turno.findMany({
     where: {
       profesionalId,
-      clinicId: CLINIC_ID_PUBLIC,
+      clinicId,
       estado: { not: "CANCELADO" },
       fecha: { in: slots.map((s) => s.fecha) },
     },
@@ -240,13 +248,7 @@ export default async function HorarioPage({ searchParams }: Props) {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
                 {slotsDisponibles.map((slot) => (
                   <label key={slot.fechaISO} className="relative cursor-pointer">
-                    <input
-                      type="radio"
-                      name="fechaHora"
-                      value={slot.fechaISO}
-                      required
-                      className="peer sr-only"
-                    />
+                    <input type="radio" name="fechaHora" value={slot.fechaISO} required className="peer sr-only" />
                     <div className="border-2 border-slate-200 rounded-lg p-3 text-center transition-all hover:border-[#4bbde3] hover:bg-[#f0f9fc] peer-checked:border-[#4bbde3] peer-checked:bg-[#4bbde3] peer-checked:text-white">
                       <div className="text-xs font-medium capitalize">{slot.dia}</div>
                       <div className="text-lg font-bold mt-1">{slot.hora}</div>

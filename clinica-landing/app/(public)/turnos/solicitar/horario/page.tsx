@@ -2,7 +2,6 @@ import Link from "next/link";
 import { crearTurno } from "@/lib/actions/serverTurnos";
 import { redirect } from "next/navigation";
 import { getPrisma } from "@/lib/db/prisma";
-const prisma = getPrisma();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,10 +10,13 @@ interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// Mapeo de días ISO (1=Lun, 7=Dom) 
+// ✅ ClinicId donde cargaste el seed en Neon
+const CLINIC_ID_PUBLIC = "406fc3e2-342a-4871-b52a-d63f95be4072";
+
+// Mapeo de días ISO (1=Lun, 7=Dom)
 function isoDow(date: Date) {
-  const d = date.getDay();
-  return d === 0 ? 7 : d;
+  const d = date.getDay(); // 0..6 (Dom..Sáb)
+  return d === 0 ? 7 : d; // 1..7 (Lun..Dom)
 }
 
 /**
@@ -31,32 +33,20 @@ async function handleSubmitTurno(formData: FormData) {
     const obraSocialId = (formData.get("obraSocialId") as string) || "";
     const especialidadId = (formData.get("especialidadId") as string) || "";
     const profesionalId = (formData.get("profesionalId") as string) || "";
-    const fechaHora = (formData.get("fechaHora") as string) || ""; // ISO string completo
-
-    console.log("Form data received:", {
-      nombre,
-      email,
-      dni,
-      obraSocialId,
-      especialidadId,
-      profesionalId,
-      fechaHora
-    });
+    const fechaHoraISO = (formData.get("fechaHora") as string) || ""; // ISO string completo
 
     const dniTrim = dni.trim();
-    if (dniTrim.length < 6) {
-      throw new Error("DNI inválido (mínimo 6 dígitos).");
+    if (dniTrim.length < 6) throw new Error("DNI inválido (mínimo 6 dígitos).");
+
+    if (!profesionalId || !especialidadId || !obraSocialId || !fechaHoraISO) {
+      throw new Error("Faltan datos requeridos. Volvé a comenzar el proceso.");
     }
 
-    if (!profesionalId || !especialidadId || !obraSocialId) {
-      throw new Error("Faltan datos requeridos. Por favor vuelva a comenzar el proceso.");
+    // Validar fecha ISO
+    const fechaDate = new Date(fechaHoraISO);
+    if (Number.isNaN(fechaDate.getTime())) {
+      throw new Error("Fecha/Hora inválida.");
     }
-
-    // Obtener clinicId de la primera clínica (default)
-    const clinic = await prisma.clinic.findFirst();
-    if (!clinic) throw new Error("No clinic found");
-
-    console.log("Clinic ID:", clinic.id);
 
     // Separar nombre y apellido (asumiendo formato "Nombre Apellido")
     const nombreCompleto = nombre.trim().split(" ").filter(Boolean);
@@ -64,10 +54,10 @@ async function handleSubmitTurno(formData: FormData) {
     const apellido = nombreCompleto.slice(1).join(" ") || primerNombre;
 
     const turnoData = {
-      clinicId: clinic.id,
+      clinicId: CLINIC_ID_PUBLIC,
       profesionalId: profesionalId.trim(),
       especialidadId: especialidadId.trim(),
-      fecha: fechaHora,
+      fecha: fechaDate.toISOString(), // ✅ string como espera crearTurno
       motivo: "Solicitud web desde landing",
       paciente: {
         nombre: primerNombre,
@@ -79,24 +69,18 @@ async function handleSubmitTurno(formData: FormData) {
       },
     };
 
-    console.log("Creating turno with data:", turnoData);
-
     const result = await crearTurno(turnoData);
 
     redirect(`/turnos/confirmacion?codigo=${result.codigo}`);
   } catch (error: any) {
     console.error("Error creando turno:", error);
-    console.error("Error details:", {
-      message: error?.message,
-      code: error?.code,
-      stack: error?.stack,
-      issues: error?.issues,
-    });
     throw error;
   }
 }
 
 export default async function HorarioPage({ searchParams }: Props) {
+  const prisma = getPrisma();
+
   const sp = (await searchParams) ?? {};
 
   const nombre = Array.isArray(sp.nombre) ? sp.nombre[0] : sp.nombre || "";
@@ -112,14 +96,7 @@ export default async function HorarioPage({ searchParams }: Props) {
     ? sp.profesionalId[0]
     : sp.profesionalId || "";
 
-  if (
-    !nombre ||
-    !email ||
-    !dni ||
-    !obraSocialId ||
-    !especialidadId ||
-    !profesionalId
-  ) {
+  if (!nombre || !email || !dni || !obraSocialId || !especialidadId || !profesionalId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
@@ -127,10 +104,7 @@ export default async function HorarioPage({ searchParams }: Props) {
             Parámetros incompletos
           </h2>
           <p className="text-slate-600 mb-4">Volvé al inicio del flujo.</p>
-          <Link
-            href="/turnos"
-            className="text-[var(--brand-500)] hover:underline"
-          >
+          <Link href="/turnos" className="text-[var(--brand-500)] hover:underline">
             Volver al inicio
           </Link>
         </div>
@@ -138,15 +112,10 @@ export default async function HorarioPage({ searchParams }: Props) {
     );
   }
 
-  // Obtener horarios del profesional
-  const clinic = await prisma.clinic.findFirst();
-  if (!clinic) {
-    return <div>Error: No clinic found</div>;
-  }
-
+  // ✅ Obtener horarios del profesional (misma clínica seed)
   const horarios = await prisma.horario.findMany({
     where: {
-      clinicId: clinic.id,
+      clinicId: CLINIC_ID_PUBLIC,
       profesionalId,
     },
     orderBy: { diaSemana: "asc" },
@@ -154,17 +123,17 @@ export default async function HorarioPage({ searchParams }: Props) {
 
   // Generar próximos 14 días de slots disponibles
   const slots: Array<{ fecha: Date; fechaISO: string; dia: string; hora: string }> = [];
+
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < 14; i++) {
-    const fecha = new Date(hoy);
-    fecha.setDate(hoy.getDate() + i);
-    const diaSemana = isoDow(fecha);
+    const fechaBase = new Date(hoy);
+    fechaBase.setDate(hoy.getDate() + i);
 
-    // Buscar horarios para este día
-    const horariosDelDia = horarios.filter((h: (typeof horarios)[number]) => h.diaSemana === diaSemana);
+    const diaSemana = isoDow(fechaBase); // 1..7
 
+    const horariosDelDia = horarios.filter((h) => h.diaSemana === diaSemana);
 
     for (const horario of horariosDelDia) {
       const [horaInicio, minInicio] = horario.horaInicio.split(":").map(Number);
@@ -175,11 +144,11 @@ export default async function HorarioPage({ searchParams }: Props) {
       const minutoFin = horaFin * 60 + minFin;
 
       while (minutoActual < minutoFin) {
-        const hora = Math.floor(minutoActual / 60);
-        const min = minutoActual % 60;
+        const hh = Math.floor(minutoActual / 60);
+        const mm = minutoActual % 60;
 
-        const fechaSlot = new Date(fecha);
-        fechaSlot.setHours(hora, min, 0, 0);
+        const fechaSlot = new Date(fechaBase);
+        fechaSlot.setHours(hh, mm, 0, 0);
 
         // Solo agregar si es futuro
         if (fechaSlot > new Date()) {
@@ -189,7 +158,7 @@ export default async function HorarioPage({ searchParams }: Props) {
             month: "short",
           }).format(fechaSlot);
 
-          const horaStr = `${String(hora).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+          const horaStr = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 
           slots.push({
             fecha: fechaSlot,
@@ -208,27 +177,21 @@ export default async function HorarioPage({ searchParams }: Props) {
   const turnosExistentes = await prisma.turno.findMany({
     where: {
       profesionalId,
-      clinicId: clinic.id,
+      clinicId: CLINIC_ID_PUBLIC,
       estado: { not: "CANCELADO" },
       fecha: { in: slots.map((s) => s.fecha) },
     },
     select: { fecha: true },
   });
 
-  const fechasOcupadas = new Set(
-    turnosExistentes.map((t: (typeof turnosExistentes)[number]) => t.fecha.toISOString())
-  );
-
-
+  const fechasOcupadas = new Set(turnosExistentes.map((t) => t.fecha.toISOString()));
   const slotsDisponibles = slots.filter((s) => !fechasOcupadas.has(s.fechaISO));
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-[#eaf6fb] via-white to-[#f2f9fc] p-6 pt-20">
       <div className="w-full max-w-4xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/70 p-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Elegí fecha y hora
-          </h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Elegí fecha y hora</h1>
           <Link href="/turnos" className="text-sm text-slate-600 hover:underline">
             Volver
           </Link>
@@ -248,7 +211,13 @@ export default async function HorarioPage({ searchParams }: Props) {
               No hay turnos disponibles en los próximos 14 días para este profesional.
             </p>
             <Link
-              href={`/turnos/solicitar/profesionales?nombre=${encodeURIComponent(nombre)}&email=${encodeURIComponent(email)}&dni=${encodeURIComponent(dni)}&obraSocialId=${encodeURIComponent(obraSocialId)}&especialidadId=${encodeURIComponent(especialidadId)}`}
+              href={`/turnos/solicitar/profesionales?nombre=${encodeURIComponent(
+                nombre
+              )}&email=${encodeURIComponent(email)}&dni=${encodeURIComponent(
+                dni
+              )}&obraSocialId=${encodeURIComponent(
+                obraSocialId
+              )}&especialidadId=${encodeURIComponent(especialidadId)}`}
               className="text-[#4bbde3] hover:underline"
             >
               Elegir otro profesional
@@ -267,12 +236,10 @@ export default async function HorarioPage({ searchParams }: Props) {
               <label className="block text-sm font-medium text-slate-700 mb-3">
                 Seleccioná un horario disponible:
               </label>
+
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
                 {slotsDisponibles.map((slot) => (
-                  <label
-                    key={slot.fechaISO}
-                    className="relative cursor-pointer"
-                  >
+                  <label key={slot.fechaISO} className="relative cursor-pointer">
                     <input
                       type="radio"
                       name="fechaHora"
@@ -303,4 +270,3 @@ export default async function HorarioPage({ searchParams }: Props) {
     </div>
   );
 }
-

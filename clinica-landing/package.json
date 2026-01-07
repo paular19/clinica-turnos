@@ -8,7 +8,8 @@
     "build": "next build",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",

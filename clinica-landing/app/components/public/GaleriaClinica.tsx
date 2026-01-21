@@ -6,11 +6,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 const imagenes = [
-  { src: "/assets/galeria1.jpeg", alt: "Instalaciones de la clínica" },
+  { src: "/assets/galeriar2.JPG", alt: "Instalaciones de la clínica" },
   { src: "/assets/galeria2.jpeg", alt: "Sala de espera" },
   { src: "/assets/galeria3.jpeg", alt: "Consultorios médicos" },
   { src: "/assets/galeria4.JPG", alt: "Área de internación" },
-  { src: "/assets/galeria5.JPG", alt: "Equipamiento médico" },
+  { src: "/assets/galeriar1.jpeg", alt: "Equipamiento médico" },
   { src: "/assets/galeria6.jpeg", alt: "Quirófano" },
 ];
 

@@ -4,13 +4,6 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 
 export default function QuienesSomos() {
-  const fotos = [
-    { src: "/assets/foto1.JPG", size: 220, top: "5%", left: "10%", rot: -6 },
-    { src: "/assets/foto2.jpeg", size: 220, top: "45%", left: "5%", rot: 4 },
-    { src: "/assets/foto3.jpeg", size: 220, top: "25%", left: "50%", rot: 2 },
-    { src: "/assets/foto4.JPG", size: 220, top: "65%", left: "60%", rot: -8 },
-  ];
-
   return (
     <section className="relative w-full py-28 overflow-visible">
 
@@ -33,92 +26,80 @@ export default function QuienesSomos() {
 
 
       {/* ⭐ CONTENIDO CENTRADO */}
-      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-20 items-center relative">
+      <div className="max-w-7xl mx-auto px-6 relative">
+        <div className="grid md:grid-cols-2 gap-16 items-center">
 
-        {/* COLLAGE DE FOTOS (hidden en móviles) */}
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="relative w-full min-h-[650px] md:min-h-[700px] hidden md:block"
-        >
-          {fotos.map((f, i) => (
+          {/* TEXTO - IZQUIERDA */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+            className="space-y-6 text-slate-700 leading-relaxed"
+          >
+            <h2 className="text-3xl font-semibold text-slate-800 mb-4">
+              ¿Quiénes somos?
+            </h2>
+
+            <p>
+              La <strong>Clínica San Rafael</strong> cuenta con más de cuatro décadas de trayectoria en Salta,
+              brindando atención médica cercana, segura y personalizada.
+            </p>
+
+            <p>
+              La gestión está a cargo del <strong>Dr. Sabio</strong>, médico con formación en medicina general,
+              clínica médica y medicina asistencial.
+            </p>
+
+            <p>
+              Nos destacamos por la calidad humana, el profesionalismo y la dedicación de nuestro equipo.
+            </p>
+          </motion.div>
+
+          {/* FOTOS SUPERPUESTAS - DERECHA */}
+          <div className="relative hidden md:block min-h-[800px]">
+            {/* Foto 1 - Más a la derecha */}
             <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.7 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
-              viewport={{ once: true }}
-              className="absolute"
-              style={{ top: f.top, left: f.left, rotate: `${f.rot}deg` }}
-            >
-              <div
-                className="absolute inset-0 -z-10 rounded-full bg-[#4bbde3]/20 blur-2xl"
-                style={{ width: f.size + 30, height: f.size + 30 }}
-              />
-
-              <Image
-                src={f.src}
-                alt=""
-                width={f.size}
-                height={f.size}
-                className="rounded-full object-cover shadow-2xl border-[6px] border-white"
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* VERSIÓN MÓVIL: 2x2 con fotos redondas, borde y sombra (mantener estilo desktop) */}
-        <div className="grid grid-cols-2 gap-4 md:hidden">
-          {fotos.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.06 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: true }}
-              className="relative h-36 flex items-center justify-center"
+              className="absolute top-32 right-0 rounded-3xl overflow-hidden shadow-2xl max-w-[300px]"
             >
-              <div className="relative w-[140px] h-[140px] rounded-full overflow-hidden shadow-2xl border-[6px] border-white">
-                <Image
-                  src={f.src}
-                  alt=""
-                  fill
-                  sizes="50vw"
-                  className="object-cover"
-                />
-              </div>
+              <Image
+                src="/assets/fotonos1.JPG"
+                alt="Clínica San Rafael"
+                width={300}
+                height={400}
+                className="w-full h-auto object-cover"
+                sizes="300px"
+              />
             </motion.div>
-          ))}
+
+            {/* Foto 4 - Más a la izquierda y superpuesta */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              viewport={{ once: true }}
+              className="absolute top-72 left-0 rounded-3xl overflow-hidden shadow-2xl max-w-[300px] z-10"
+            >
+              <Image
+                src="/assets/fotonos4.JPG"
+                alt="Instalaciones Clínica"
+                width={300}
+                height={400}
+                className="w-full h-auto"
+                sizes="300px"
+              />
+            </motion.div>
+          </div>
+
         </div>
 
-        {/* TEXTO */}
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true }}
-          className="space-y-6 text-slate-700 leading-relaxed"
-        >
-          <h2 className="text-3xl font-semibold text-slate-800 mb-4">
-            ¿Quiénes somos?
-          </h2>
-
-          <p>
-            La <strong>Clínica San Rafael</strong> cuenta con más de cuatro décadas de trayectoria en Salta,
-            brindando atención médica cercana, segura y personalizada.
-          </p>
-
-          <p>
-            La gestión está a cargo del <strong>Dr. Sabio</strong>, médico con formación en medicina general,
-            clínica médica y medicina asistencial.
-          </p>
-
-          <p>
-            Nos destacamos por la calidad humana, el profesionalismo y la dedicación de nuestro equipo.
-          </p>
-        </motion.div>
+        {/* Elementos decorativos */}
+        <div className="absolute -top-6 left-20 w-32 h-32 bg-[#4bbde3]/20 rounded-full blur-3xl -z-10" />
+        <div className="absolute -bottom-6 right-20 w-40 h-40 bg-[#d89c6c]/20 rounded-full blur-3xl -z-10" />
       </div>
     </section>
   );

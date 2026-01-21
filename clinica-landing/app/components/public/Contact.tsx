@@ -32,19 +32,19 @@ export default function Contact() {
 
             <div className="space-y-4 text-slate-700 mb-8">
               <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-[var(--brand-500)] mt-1" />
+                <MapPin className="w-5 h-5 text-[var(--gold)] mt-1" />
                 <span>
                   Av. Sarmiento 566, Salta Capital, Argentina
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-[var(--brand-500)]" />
+                <Phone className="w-5 h-5 text-[var(--gold)]" />
                 <span>Teléfono fijo: 4318111</span>
               </div>
 
               <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-[var(--brand-500)]" />
+                <MessageCircle className="w-5 h-5 text-[var(--gold)]" />
                 <a
                   href="https://wa.link/qks17s"
                   target="_blank"

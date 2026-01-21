@@ -8,6 +8,8 @@
   --brand-600: #256ff3;
   /* accent */
   --muted: #64748b;
+  --gold: #d89c6c;
+  /* gold accent */
 }
 
 /* Tailwind base/components/utilities (built at compile time) */

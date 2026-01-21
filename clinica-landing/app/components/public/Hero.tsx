@@ -1,70 +1,66 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function HeroClinicaCompleto() {
   return (
-    <section className="relative w-full min-h-[80vh] overflow-visible bg-white">
+    <section className="relative w-full min-h-screen bg-white overflow-hidden">
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-10 items-center">
-
-        {/* TEXTO */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center md:text-left"
-        >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-normal text-slate-700 mb-6 leading-tight">
-            Atención médica de excelencia <span className="md:block inline">centrada en vos</span>
-          </h1>
-
-          <p className="text-slate-600 text-base sm:text-lg mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
-            Profesionales especializados, tecnología avanzada y un enfoque humano.
-          </p>
-
-          <Link
-            href="/turnos"
-            className="inline-block bg-[var(--brand-500)] hover:bg-[var(--brand-600)]
-            text-white font-semibold px-8 py-4 rounded-xl shadow-md transition"
+      <div className="relative z-10 max-w-7xl mx-auto min-h-screen flex items-center py-12 px-6">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 w-full items-center">
+          
+          {/* TEXTO */}
+          <motion.div 
+            className="order-2 md:order-1"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
           >
-            Solicitar turno
-          </Link>
-        </motion.div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-800 mb-6 leading-tight">
+              Tu salud, nuestra prioridad
+            </h1>
+            <p className="text-lg sm:text-xl text-slate-600 mb-10 leading-relaxed">
+              Atención médica de excelencia con tecnología de vanguardia y un enfoque humano
+            </p>
+            <Link 
+              href="/turnos"
+              className="inline-block bg-[var(--brand-500)] hover:bg-[var(--brand-600)]
+              text-white font-semibold px-10 py-5 rounded-xl shadow-lg transition-all duration-300 
+              hover:shadow-xl hover:scale-105"
+            >
+              Solicitar turno
+            </Link>
+          </motion.div>
 
-        {/* IMAGEN */}
-        <div className="relative w-full h-[280px] sm:h-[360px] md:h-[480px] rounded-2xl overflow-hidden shadow-lg md:-ml-12 lg:-ml-20">
-          <Image
-            src="/assets/hero-entrada.jpg"
-            alt="Equipo médico profesional"
-            fill
-            className="object-cover"
-            style={{ objectPosition: '10% center' }}
-            priority
-          />
-          <div className="absolute inset-0 bg-[var(--brand-500)]/15" />
+          {/* IMAGEN con animación CSS */}
+          <div className="order-1 md:order-2 h-[400px] sm:h-[500px] md:h-[600px] w-full rounded-3xl overflow-hidden shadow-2xl animate-fadeInRight">
+            <img 
+              src="/assets/fotonueva2.jpg"
+              alt="Clínica"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+            />
+          </div>
+          
         </div>
-
       </div>
 
-      {/* 🌊 ONDAS MÁS BAJAS, ALTAS Y SUAVES */}
-      {/* 🌊 ONDAS BIEN ABAJO, SUAVES Y ALTAS */}
-      <div className="absolute -bottom-52 left-0 w-full pointer-events-none">
-        <svg
-          viewBox="0 0 1440 400"
-          className="w-full h-[360px] rotate-180 opacity-[0.12]"
-          preserveAspectRatio="none"
-        >
-          <path
-            fill="#4bbde3"
-            d="M0,300L60,285.3C120,271,240,241,360,229.3C480,218,600,224,720,240C840,256,960,282,1080,288C1200,294,1320,282,1380,276L1440,270L1440,400L0,400Z"
-          />
-        </svg>
-      </div>
-
-
+      <style jsx>{`
+        @keyframes fadeInRight {
+          from {
+            opacity: 0;
+            transform: translateX(50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        
+        .animate-fadeInRight {
+          animation: fadeInRight 0.8s ease-out 0.2s both;
+        }
+      `}</style>
     </section>
   );
 }

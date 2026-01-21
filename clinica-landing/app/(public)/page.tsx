@@ -1,4 +1,5 @@
 import Hero from '../components/public/Hero';
+import AboutClinica from '../components/public/AboutClinica';
 import Services from '../components/public/Services';
 import Team from '../components/public/Team';
 import Contact from '../components/public/Contact';
@@ -10,6 +11,10 @@ export default function Page() {
   return (
     <div>
       <Hero />
+
+      {/* Nueva sección con background de la clínica */}
+      <AboutClinica />
+
       <main className="container-max py-12 space-y-20">
         <section id="servicios">
           <Services />
@@ -31,7 +36,7 @@ export default function Page() {
           <Contact />
         </section>
 
-         <WhatsappFloat />
+        <WhatsappFloat />
       </main>
     </div>
   );

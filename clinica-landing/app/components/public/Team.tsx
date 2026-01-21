@@ -67,7 +67,7 @@ export default function QuienesSomos() {
               className="absolute top-32 right-0 rounded-3xl overflow-hidden shadow-2xl max-w-[300px]"
             >
               <Image
-                src="/assets/fotonos1.JPG"
+                src="/assets/fotonos1.jpg"
                 alt="Clínica San Rafael"
                 width={300}
                 height={400}
@@ -85,7 +85,7 @@ export default function QuienesSomos() {
               className="absolute top-72 left-0 rounded-3xl overflow-hidden shadow-2xl max-w-[300px] z-10"
             >
               <Image
-                src="/assets/fotonos4.JPG"
+                src="/assets/fotonos4.jpg"
                 alt="Instalaciones Clínica"
                 width={300}
                 height={400}

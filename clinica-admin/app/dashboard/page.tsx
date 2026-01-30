@@ -64,13 +64,15 @@ export default async function DashboardPage() {
         where: { clinicId, activa: true },
     });
 
+    type TurnoConRelaciones = (typeof turnosHoy)[number];
+
     const estadisticas = {
         total: turnosHoy.length,
-        confirmados: turnosHoy.filter((t) => t.estado === 'CONFIRMADO').length,
-        asistidos: turnosHoy.filter((t) => t.estado === 'ASISTIDO').length,
-        retrasados: turnosHoy.filter((t) => t.estado === 'RETRASADO').length,
-        ausencias: turnosHoy.filter((t) => t.estado === 'AUSENCIA').length,
-        cancelados: turnosHoy.filter((t) => t.estado === 'CANCELADO').length,
+        confirmados: turnosHoy.filter((t: TurnoConRelaciones) => t.estado === 'CONFIRMADO').length,
+        asistidos: turnosHoy.filter((t: TurnoConRelaciones) => t.estado === 'ASISTIDO').length,
+        retrasados: turnosHoy.filter((t: TurnoConRelaciones) => t.estado === 'RETRASADO').length,
+        ausencias: turnosHoy.filter((t: TurnoConRelaciones) => t.estado === 'AUSENCIA').length,
+        cancelados: turnosHoy.filter((t: TurnoConRelaciones) => t.estado === 'CANCELADO').length,
     };
 
     const estadoBadgeColor = (estado: string) => {

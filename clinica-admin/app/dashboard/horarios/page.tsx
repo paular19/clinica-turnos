@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import Link from 'next/link';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import DeleteHorarioButton from './DeleteHorarioButton';
+import type { Prisma } from '@prisma/client';
 
 const DIAS_SEMANA = [
     'Domingo',
@@ -58,8 +59,17 @@ export default async function HorariosPage() {
         ],
     });
 
+    type HorarioConProfesional = Prisma.HorarioGetPayload<{
+        include: { profesional: { include: { especialidades: true } } };
+    }>;
+
+    type HorariosPorProfesional = Record<
+        string,
+        { profesional: HorarioConProfesional['profesional']; horarios: HorarioConProfesional[] }
+    >;
+
     // Agrupar por profesional
-    const horariosPorProfesional = horarios.reduce((acc, horario) => {
+    const horariosPorProfesional = (horarios as HorarioConProfesional[]).reduce<HorariosPorProfesional>((acc, horario) => {
         const key = horario.profesionalId;
         if (!acc[key]) {
             acc[key] = {
@@ -69,7 +79,7 @@ export default async function HorariosPage() {
         }
         acc[key].horarios.push(horario);
         return acc;
-    }, {} as Record<string, { profesional: any; horarios: any[] }>);
+    }, {});
 
     return (
         <div className="space-y-6">

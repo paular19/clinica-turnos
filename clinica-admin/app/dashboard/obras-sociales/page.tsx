@@ -40,6 +40,8 @@ export default async function ObrasSocialesPage() {
         },
     });
 
+    type ObraSocialConCounts = (typeof obrasSociales)[number];
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -64,7 +66,7 @@ export default async function ObrasSocialesPage() {
                         No hay obras sociales registradas
                     </div>
                 ) : (
-                    obrasSociales.map((obraSocial) => (
+                    obrasSociales.map((obraSocial: ObraSocialConCounts) => (
                         <div
                             key={obraSocial.id}
                             className="bg-white rounded-lg shadow p-6 space-y-4"

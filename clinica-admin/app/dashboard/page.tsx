@@ -5,7 +5,6 @@ import { Users, Calendar, Building2, Clock, CheckCircle, AlertCircle, XCircle } 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { TurnoEstado } from '@prisma/client';
 
 export default async function DashboardPage() {
     const user = await currentUser();
@@ -67,11 +66,11 @@ export default async function DashboardPage() {
 
     const estadisticas = {
         total: turnosHoy.length,
-        confirmados: turnosHoy.filter((t) => t.estado === TurnoEstado.CONFIRMADO).length,
-        asistidos: turnosHoy.filter((t) => t.estado === TurnoEstado.ASISTIDO).length,
-        retrasados: turnosHoy.filter((t) => t.estado === TurnoEstado.RETRASADO).length,
-        ausencias: turnosHoy.filter((t) => t.estado === TurnoEstado.AUSENCIA).length,
-        cancelados: turnosHoy.filter((t) => t.estado === TurnoEstado.CANCELADO).length,
+        confirmados: turnosHoy.filter((t) => t.estado === 'CONFIRMADO').length,
+        asistidos: turnosHoy.filter((t) => t.estado === 'ASISTIDO').length,
+        retrasados: turnosHoy.filter((t) => t.estado === 'RETRASADO').length,
+        ausencias: turnosHoy.filter((t) => t.estado === 'AUSENCIA').length,
+        cancelados: turnosHoy.filter((t) => t.estado === 'CANCELADO').length,
     };
 
     const estadoBadgeColor = (estado: string) => {

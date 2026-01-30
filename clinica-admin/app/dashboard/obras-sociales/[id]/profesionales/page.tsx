@@ -91,7 +91,7 @@ export default async function ObraSocialProfesionalesPage({
                         </p>
                     ) : (
                         <div className="space-y-3">
-                            {profesionalesVinculados.map((profesional) => (
+                            {profesionalesVinculados.map((profesional: ProfesionalConEspecialidades) => (
                                 <div
                                     key={profesional.id}
                                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
@@ -129,7 +129,7 @@ export default async function ObraSocialProfesionalesPage({
                         </p>
                     ) : (
                         <div className="space-y-3">
-                            {profesionalesDisponibles.map((profesional) => (
+                            {profesionalesDisponibles.map((profesional: ProfesionalConEspecialidades) => (
                                 <div
                                     key={profesional.id}
                                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"

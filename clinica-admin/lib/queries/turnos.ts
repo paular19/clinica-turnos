@@ -30,11 +30,11 @@ export async function getTurnosAdmin(params: TurnosAdminParams) {
 
     ...(f?.fechaFrom || f?.fechaTo
       ? {
-          fecha: {
-            ...(f?.fechaFrom ? { gte: new Date(f.fechaFrom) } : {}),
-            ...(f?.fechaTo ? { lte: new Date(f.fechaTo) } : {}),
-          },
-        }
+        fecha: {
+          ...(f?.fechaFrom ? { gte: new Date(f.fechaFrom) } : {}),
+          ...(f?.fechaTo ? { lte: new Date(f.fechaTo) } : {}),
+        },
+      }
       : {}),
   };
 
@@ -135,4 +135,82 @@ export async function getDisponibilidadProfesional(params: {
   }
 
   return slots;
+}
+export async function getTurnosMedicoHoy(profesionalId: string) {
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+  const turnos = await prisma.turno.findMany({
+    where: {
+      profesionalId,
+      fecha: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    include: {
+      paciente: {
+        select: {
+          id: true,
+          nombre: true,
+          apellido: true,
+          dni: true,
+          email: true,
+          telefono: true,
+          obraSocial: {
+            select: { nombre: true },
+          },
+        },
+      },
+      profesional: {
+        select: {
+          id: true,
+          nombre: true,
+          matricula: true,
+        },
+      },
+      especialidad: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
+    },
+    orderBy: {
+      fecha: "asc",
+    },
+  });
+
+  return turnos;
+}
+
+export async function getTurnosMedicoResumen(profesionalId: string) {
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
+  const turnos = await prisma.turno.findMany({
+    where: {
+      profesionalId,
+      fecha: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+    select: {
+      estado: true,
+    },
+  });
+
+  const resumen = {
+    total: turnos.length,
+    confirmados: turnos.filter((t) => t.estado === "CONFIRMADO").length,
+    asistidos: turnos.filter((t) => t.estado === "ASISTIDO").length,
+    retrasados: turnos.filter((t) => t.estado === "RETRASADO").length,
+    cancelados: turnos.filter((t) => t.estado === "CANCELADO").length,
+    pendientes: turnos.filter((t) => t.estado === "PENDIENTE").length,
+  };
+
+  return resumen;
 }

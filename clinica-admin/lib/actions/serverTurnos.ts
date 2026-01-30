@@ -141,7 +141,8 @@ export async function crearTurno(data: CrearTurnoInput) {
       const turno = await tx.turno.create({
         data: {
           fecha,
-          estado: "PENDIENTE",
+          // Turnos creados via admin/panel quedan confirmados por defecto
+          estado: "CONFIRMADO",
           motivo: parsed.motivo,
           codigo,
           pacienteId: paciente.id,

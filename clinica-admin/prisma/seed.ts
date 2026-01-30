@@ -36,7 +36,7 @@ function t(hhmm: string) {
 }
 
 async function main() {
-  const CLINIC_ID = "11111111-1111-1111-1111-111111111111";
+  const CLINIC_ID = "406fc3e2-342a-4871-b52a-d63f95be4072";
 
   // 1) Clínica + Config
   const clinic = await prisma.clinic.upsert({

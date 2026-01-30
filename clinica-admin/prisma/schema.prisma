@@ -2,11 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
   provider = "postgresql"
 }
-
 
 model Clinic {
   id                      String                  @id @default(uuid())
@@ -41,7 +39,7 @@ model Usuario {
 model Profesional {
   id             String                  @id @default(uuid())
   nombre         String
-  matricula      String?                  @unique
+  matricula      String?                 @unique
   fotoUrl        String?
   usuarioId      String?                 @unique
   usuario        Usuario?                @relation(fields: [usuarioId], references: [id])
@@ -95,8 +93,8 @@ model Paciente {
   turnos       Turno[]
 
   @@unique([dni, clinicId])
-  @@index([obraSocialId])
   @@unique([email, clinicId])
+  @@index([obraSocialId])
   @@index([clinicId])
 }
 
@@ -161,6 +159,8 @@ enum TurnoEstado {
   PENDIENTE
   CONFIRMADO
   ASISTIDO
+  RETRASADO
   CANCELADO
   REPROGRAMADO
+  AUSENCIA
 }

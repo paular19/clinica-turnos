@@ -192,7 +192,7 @@ export default async function DashboardPage() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {turnosHoy.map((turno) => (
+                            {turnosHoy.map((turno: TurnoConRelaciones) => (
                                 <tr key={turno.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         {format(new Date(turno.fecha), "HH:mm")}

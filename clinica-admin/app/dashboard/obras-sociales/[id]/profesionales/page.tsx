@@ -152,3 +152,12 @@ export default async function ObraSocialProfesionalesPage({
                                         profesionalId={profesional.id}
                                         isVinculado={false}
                                     />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -56,9 +56,12 @@ export default async function ObraSocialProfesionalesPage({
         },
     });
 
-    const profesionalesVinculados = obraSocial.profesionales.map(p => p.profesional);
+    type ProfesionalConEspecialidades = (typeof todosLosProfesionales)[number];
+    type VinculoProfesional = (typeof obraSocial.profesionales)[number];
+
+    const profesionalesVinculados = obraSocial.profesionales.map((p: VinculoProfesional) => p.profesional);
     const profesionalesDisponibles = todosLosProfesionales.filter(
-        p => !profesionalesVinculados.find(pv => pv.id === p.id)
+        (p: ProfesionalConEspecialidades) => !profesionalesVinculados.find((pv: ProfesionalConEspecialidades) => pv.id === p.id)
     );
 
     return (

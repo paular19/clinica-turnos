@@ -99,7 +99,7 @@ export default async function ObraSocialProfesionalesPage({
                                     <div>
                                         <p className="font-medium text-gray-900">{profesional.nombre}</p>
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                            {profesional.especialidades.map((esp) => (
+                                            {profesional.especialidades.map((esp: typeof profesional.especialidades[number]) => (
                                                 <span
                                                     key={esp.id}
                                                     className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full"
@@ -137,7 +137,7 @@ export default async function ObraSocialProfesionalesPage({
                                     <div>
                                         <p className="font-medium text-gray-900">{profesional.nombre}</p>
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                            {profesional.especialidades.map((esp) => (
+                                            {profesional.especialidades.map((esp: typeof profesional.especialidades[number]) => (
                                                 <span
                                                     key={esp.id}
                                                     className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full"
@@ -152,12 +152,3 @@ export default async function ObraSocialProfesionalesPage({
                                         profesionalId={profesional.id}
                                         isVinculado={false}
                                     />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}

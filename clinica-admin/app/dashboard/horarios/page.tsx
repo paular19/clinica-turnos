@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db/prisma';
 import Link from 'next/link';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import DeleteHorarioButton from './DeleteHorarioButton';
-import type { Prisma } from '@prisma/client';
 
 const DIAS_SEMANA = [
     'Domingo',
@@ -59,9 +58,7 @@ export default async function HorariosPage() {
         ],
     });
 
-    type HorarioConProfesional = Prisma.HorarioGetPayload<{
-        include: { profesional: { include: { especialidades: true } } };
-    }>;
+    type HorarioConProfesional = (typeof horarios)[number];
 
     type HorariosPorProfesional = Record<
         string,

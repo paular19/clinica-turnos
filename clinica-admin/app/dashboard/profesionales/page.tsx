@@ -43,6 +43,8 @@ export default async function ProfesionalesPage() {
         },
     });
 
+    type ProfesionalConRelaciones = (typeof profesionales)[number];
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -96,7 +98,7 @@ export default async function ProfesionalesPage() {
                                 </td>
                             </tr>
                         ) : (
-                            profesionales.map((profesional) => (
+                            profesionales.map((profesional: ProfesionalConRelaciones) => (
                                 <tr key={profesional.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">

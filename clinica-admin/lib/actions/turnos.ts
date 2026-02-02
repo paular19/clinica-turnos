@@ -55,7 +55,7 @@ export async function createTurno(data: {
     const turno = await prisma.turno.create({
         data: {
             fecha: data.fecha,
-            estado: TurnoEstado.CONFIRMADO,
+            estado: 'CONFIRMADO',
             motivo: data.motivo,
             codigo,
             pacienteId: data.pacienteId,
@@ -81,7 +81,7 @@ export async function cancelarTurno(id: string, motivo?: string) {
     const turno = await prisma.turno.update({
         where: { id },
         data: {
-            estado: TurnoEstado.CANCELADO,
+            estado: 'CANCELADO',
             motivo: motivo || 'Cancelado por administrador',
         },
         include: {

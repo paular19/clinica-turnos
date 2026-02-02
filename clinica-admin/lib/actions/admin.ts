@@ -111,7 +111,7 @@ export async function deleteProfesional(id: string) {
     if (!userId) throw new Error('No autorizado');
 
     try {
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: typeof prisma) => {
             // 1. Eliminar TODOS los turnos (no solo actualizar)
             await tx.turno.deleteMany({
                 where: { profesionalId: id },

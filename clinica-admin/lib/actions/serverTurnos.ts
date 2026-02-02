@@ -28,7 +28,7 @@ function toMinutes(hhmm: string) {
   return h * 60 + m;
 }
 
-async function validarSlotYCompatibilidad(tx: any, params: {
+async function validarSlotYCompatibilidad(tx: typeof prisma, params: {
   clinicId: string;
   profesionalId: string;
   especialidadId: string;
@@ -107,7 +107,7 @@ export async function crearTurno(data: CrearTurnoInput) {
 
     const fecha = parseISO(parsed.fecha);
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
       await validarSlotYCompatibilidad(tx, {
         clinicId: parsed.clinicId,
         profesionalId: parsed.profesionalId,
@@ -232,7 +232,7 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
 
     const nuevaFecha = parseISO(parsed.nuevaFecha);
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: typeof prisma) => {
       // validar nuevo slot (misma especialidad, mismo profesional, misma obra social del paciente)
       await validarSlotYCompatibilidad(tx, {
         clinicId: existing.clinicId,

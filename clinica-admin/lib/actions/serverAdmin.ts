@@ -2,7 +2,6 @@
 
 import { prisma } from "../db/prisma";
 import { crearProfesionalSchema, crearEspecialidadSchema, registrarPacienteSchema } from "../zod/schemas";
-import { Rol } from "@prisma/client";
 import { z } from "zod";
 import { sanitizeString } from "../utils/sanitize";
 
@@ -19,7 +18,7 @@ export async function crearProfesional(input: any) {
           clerkId: parsed.clerkId,
           nombre,
           email: `${parsed.clerkId}@example.com`,
-          rol: Rol.MEDICO,
+          rol: 'MEDICO',
           clinicId: parsed.clinicId
         }
       });

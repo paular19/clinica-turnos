@@ -46,6 +46,8 @@ export default async function MedicosHorariosPage() {
         },
     });
 
+    type HorarioType = (typeof horarios)[number];
+
     return (
         <div className="space-y-6">
             <div>
@@ -61,7 +63,7 @@ export default async function MedicosHorariosPage() {
                 </div>
             ) : (
                 <div className="grid gap-4">
-                    {horarios.map((horario) => (
+                    {horarios.map((horario: HorarioType) => (
                         <div key={horario.id} className="bg-white rounded-lg shadow p-6">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>

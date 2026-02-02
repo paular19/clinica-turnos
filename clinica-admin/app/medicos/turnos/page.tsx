@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import TurnoMedicoActions from './TurnoMedicoActions';
-import { TurnoEstado } from '@prisma/client';
 
 export default async function MedicosTurnosPage() {
     const { userId } = await auth();
@@ -71,12 +70,12 @@ export default async function MedicosTurnosPage() {
     // Calcular estadísticas
     const estadisticas = {
         total: turnos.length,
-        confirmados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.CONFIRMADO).length,
-        asistidos: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.ASISTIDO).length,
-        retrasados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.RETRASADO).length,
-        ausencias: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.AUSENCIA).length,
-        cancelados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.CANCELADO).length,
-        pendientes: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.PENDIENTE).length,
+        confirmados: turnos.filter((t: TurnoConRelaciones) => t.estado === 'CONFIRMADO').length,
+        asistidos: turnos.filter((t: TurnoConRelaciones) => t.estado === 'ASISTIDO').length,
+        retrasados: turnos.filter((t: TurnoConRelaciones) => t.estado === 'RETRASADO').length,
+        ausencias: turnos.filter((t: TurnoConRelaciones) => t.estado === 'AUSENCIA').length,
+        cancelados: turnos.filter((t: TurnoConRelaciones) => t.estado === 'CANCELADO').length,
+        pendientes: turnos.filter((t: TurnoConRelaciones) => t.estado === 'PENDIENTE').length,
     };
 
     const estadoBadgeColor = (estado: string) => {

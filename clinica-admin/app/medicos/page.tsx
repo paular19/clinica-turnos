@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Clock, Calendar, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { TurnoEstado } from '@prisma/client';
 
 export default async function MedicosDashboardPage() {
     const { userId } = await auth();
@@ -59,10 +58,10 @@ export default async function MedicosDashboardPage() {
 
     const estadisticas = {
         total: turnosHoy.length,
-        confirmados: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.CONFIRMADO).length,
-        asistidos: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.ASISTIDO).length,
-        retrasados: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.RETRASADO).length,
-        ausencias: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.AUSENCIA).length,
+        confirmados: turnosHoy.filter((t: TurnoSimple) => t.estado === 'CONFIRMADO').length,
+        asistidos: turnosHoy.filter((t: TurnoSimple) => t.estado === 'ASISTIDO').length,
+        retrasados: turnosHoy.filter((t: TurnoSimple) => t.estado === 'RETRASADO').length,
+        ausencias: turnosHoy.filter((t: TurnoSimple) => t.estado === 'AUSENCIA').length,
     };
 
     return (

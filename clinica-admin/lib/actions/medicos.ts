@@ -3,7 +3,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '../db/prisma';
-import { TurnoEstado } from '@prisma/client';
 
 export async function marcarAsistido(turnoId: string) {
     const { userId } = await auth();
@@ -30,7 +29,7 @@ export async function marcarAsistido(turnoId: string) {
     await prisma.turno.update({
         where: { id: turnoId },
         data: {
-            estado: TurnoEstado.ASISTIDO,
+            estado: 'ASISTIDO',
         },
     });
 
@@ -62,7 +61,7 @@ export async function marcarAusencia(turnoId: string) {
     await prisma.turno.update({
         where: { id: turnoId },
         data: {
-            estado: TurnoEstado.AUSENCIA,
+            estado: 'AUSENCIA',
         },
     });
 
@@ -93,7 +92,7 @@ export async function marcarRetrasado(turnoId: string) {
     await prisma.turno.update({
         where: { id: turnoId },
         data: {
-            estado: TurnoEstado.RETRASADO,
+            estado: 'RETRASADO',
         },
     });
 

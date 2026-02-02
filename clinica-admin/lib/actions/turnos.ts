@@ -3,7 +3,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '../db/prisma';
-import { TurnoEstado } from '@prisma/client';
 
 export async function getTurnosByProfesional(profesionalId: string) {
     const { userId } = await auth();
@@ -103,7 +102,7 @@ export async function confirmarTurno(id: string) {
     const turno = await prisma.turno.update({
         where: { id },
         data: {
-            estado: TurnoEstado.CONFIRMADO,
+            estado: 'CANCELADO',
         },
         include: {
             paciente: true,
@@ -123,7 +122,7 @@ export async function marcarAsistido(id: string) {
     const turno = await prisma.turno.update({
         where: { id },
         data: {
-            estado: TurnoEstado.ASISTIDO,
+            estado: 'ASISTIDO',
         },
         include: {
             paciente: true,

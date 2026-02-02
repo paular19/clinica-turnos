@@ -64,6 +64,8 @@ export default async function TurnosPage({
         take: 100,
     });
 
+    type TurnoConRelaciones = (typeof turnos)[number];
+
     const estadoBadgeColor = (estado: string) => {
         switch (estado) {
             case 'PENDIENTE':
@@ -138,7 +140,7 @@ export default async function TurnosPage({
                                 </td>
                             </tr>
                         ) : (
-                            turnos.map((turno) => (
+                            turnos.map((turno: TurnoConRelaciones) => (
                                 <tr key={turno.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2 text-sm">

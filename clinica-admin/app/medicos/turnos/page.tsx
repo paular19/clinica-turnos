@@ -66,15 +66,17 @@ export default async function MedicosTurnosPage() {
         },
     });
 
+    type TurnoConRelaciones = (typeof turnos)[number];
+
     // Calcular estadísticas
     const estadisticas = {
         total: turnos.length,
-        confirmados: turnos.filter((t) => t.estado === TurnoEstado.CONFIRMADO).length,
-        asistidos: turnos.filter((t) => t.estado === TurnoEstado.ASISTIDO).length,
-        retrasados: turnos.filter((t) => t.estado === TurnoEstado.RETRASADO).length,
-        ausencias: turnos.filter((t) => t.estado === TurnoEstado.AUSENCIA).length,
-        cancelados: turnos.filter((t) => t.estado === TurnoEstado.CANCELADO).length,
-        pendientes: turnos.filter((t) => t.estado === TurnoEstado.PENDIENTE).length,
+        confirmados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.CONFIRMADO).length,
+        asistidos: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.ASISTIDO).length,
+        retrasados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.RETRASADO).length,
+        ausencias: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.AUSENCIA).length,
+        cancelados: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.CANCELADO).length,
+        pendientes: turnos.filter((t: TurnoConRelaciones) => t.estado === TurnoEstado.PENDIENTE).length,
     };
 
     const estadoBadgeColor = (estado: string) => {
@@ -180,7 +182,7 @@ export default async function MedicosTurnosPage() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {turnos.map((turno) => (
+                            {turnos.map((turno: TurnoConRelaciones) => (
                                 <tr key={turno.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                                         {format(new Date(turno.fecha), "HH:mm", { locale: es })}

@@ -55,12 +55,14 @@ export default async function MedicosDashboardPage() {
         },
     });
 
+    type TurnoSimple = (typeof turnosHoy)[number];
+
     const estadisticas = {
         total: turnosHoy.length,
-        confirmados: turnosHoy.filter((t) => t.estado === TurnoEstado.CONFIRMADO).length,
-        asistidos: turnosHoy.filter((t) => t.estado === TurnoEstado.ASISTIDO).length,
-        retrasados: turnosHoy.filter((t) => t.estado === TurnoEstado.RETRASADO).length,
-        ausencias: turnosHoy.filter((t) => t.estado === TurnoEstado.AUSENCIA).length,
+        confirmados: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.CONFIRMADO).length,
+        asistidos: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.ASISTIDO).length,
+        retrasados: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.RETRASADO).length,
+        ausencias: turnosHoy.filter((t: TurnoSimple) => t.estado === TurnoEstado.AUSENCIA).length,
     };
 
     return (
@@ -93,7 +95,7 @@ export default async function MedicosDashboardPage() {
                                 <div>
                                     <p className="text-sm font-medium text-gray-600">Especialidades:</p>
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {profesional.especialidades.map((esp) => (
+                                        {profesional.especialidades.map((esp: typeof profesional.especialidades[number]) => (
                                             <span
                                                 key={esp.id}
                                                 className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"

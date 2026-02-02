@@ -110,7 +110,7 @@ export default async function ProfesionalesPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-wrap gap-1">
-                                            {profesional.especialidades.map((esp) => (
+                                            {profesional.especialidades.map((esp: typeof profesional.especialidades[number]) => (
                                                 <span
                                                     key={esp.id}
                                                     className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800"

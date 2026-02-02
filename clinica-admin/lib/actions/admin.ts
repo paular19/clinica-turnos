@@ -3,6 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '../db/prisma';
+import { Prisma } from '@prisma/client';
 
 // PROFESIONALES
 
@@ -111,7 +112,7 @@ export async function deleteProfesional(id: string) {
     if (!userId) throw new Error('No autorizado');
 
     try {
-        await prisma.$transaction(async (tx: typeof prisma) => {
+        await prisma.$transaction(async (tx) => {
             // 1. Eliminar TODOS los turnos (no solo actualizar)
             await tx.turno.deleteMany({
                 where: { profesionalId: id },

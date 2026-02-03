@@ -10,14 +10,20 @@ const idSchema = z.union([z.string().uuid(), z.string().cuid()]);
 
 export const pacienteSchema = z.object({
   nombre: z.string().min(2),
-  apellido: z.string().min(2),
+  // Permitimos apellidos de 1 carácter para no bloquear turnos
+  apellido: z.string().min(1),
   dni: z.string().min(6),
   email: z.string().email(),
-  telefono: z.string().optional(),
+  telefono: z.string().optional().nullable().transform(val => val || undefined),
 
-  // Permite: UUID/CUID, o "" (lo transforma a undefined)
+  // Permite: UUID/CUID, o "" (lo transforma a undefined), o null/undefined
   obraSocialId: z
-    .union([idSchema, z.literal("").transform(() => undefined)])
+    .union([
+      idSchema,
+      z.literal("").transform(() => undefined),
+      z.null().transform(() => undefined),
+      z.undefined()
+    ])
     .optional(),
 });
 

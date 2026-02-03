@@ -1,6 +1,7 @@
 import { listProfesionalesPorObraSocialYEspecialidad } from "@/lib/actions/turnos-queries";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { User } from "lucide-react";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +39,9 @@ export default async function ProfesionalesPage({ searchParams }: Props) {
                             {prof.fotoUrl ? (
                                 <img src={prof.fotoUrl} alt={prof.nombre} className="w-20 h-20 rounded-full object-cover" />
                             ) : (
-                                <div className="w-20 h-20 rounded-full bg-slate-200" />
+                                <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center">
+                                    <User size={40} className="text-slate-400" />
+                                </div>
                             )}
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">

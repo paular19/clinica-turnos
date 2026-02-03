@@ -11,6 +11,7 @@ import {
 } from "../zod/schemas";
 import { genCodigo, sanitizeString, parseISO } from "../utils/sanitize";
 import { sendConfirmationEmail } from "../email/sendConfirmationEmail";
+import { sendTurnoNotification } from "../email/sendTurnoNotification";
 import { revalidatePaths } from "../utils/revalidate";
 import { getTurnoByCodigo } from "../queries/turnos";
 import { generateComprobantePDF } from "../pdf/generateComprobante";
@@ -102,7 +103,17 @@ async function validarSlotYCompatibilidad(tx: any, params: {
 
 export async function crearTurno(data: CrearTurnoInput) {
   try {
-    const parsed = crearTurnoSchema.parse(data);
+    // Log para debugging
+    console.log("Datos recibidos en crearTurno:", JSON.stringify(data, null, 2));
+
+    const parseResult = crearTurnoSchema.safeParse(data);
+
+    if (!parseResult.success) {
+      console.error("Error de validación Zod:", parseResult.error.format());
+      throw new Error(`Validación fallida: ${JSON.stringify(parseResult.error.format())}`);
+    }
+
+    const parsed = parseResult.data;
 
     parsed.paciente.nombre = sanitizeString(parsed.paciente.nombre);
     parsed.paciente.apellido = sanitizeString(parsed.paciente.apellido);
@@ -110,7 +121,7 @@ export async function crearTurno(data: CrearTurnoInput) {
 
     const fecha = parseISO(parsed.fecha);
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx) => {
       await validarSlotYCompatibilidad(tx, {
         clinicId: parsed.clinicId,
         profesionalId: parsed.profesionalId,
@@ -144,7 +155,8 @@ export async function crearTurno(data: CrearTurnoInput) {
       const turno = await tx.turno.create({
         data: {
           fecha,
-          estado: "PENDIENTE",
+          // Confirm new turnos automáticamente para evitar el paso manual de aprobación
+          estado: "CONFIRMADO",
           motivo: parsed.motivo,
           codigo,
           pacienteId: paciente.id,
@@ -202,10 +214,35 @@ export async function cancelarTurno(input: CancelarTurnoInput) {
     if (parsed.turnoId) where.id = parsed.turnoId;
     if (parsed.codigo) where.codigo = parsed.codigo;
 
+    // Obtener el turno antes de actualizar para acceder a los datos
+    const turnoAnterior = await prisma.turno.findFirst({
+      where,
+      include: {
+        paciente: true,
+        profesional: true,
+        especialidad: true,
+      },
+    });
+
     const turno = await prisma.turno.updateMany({
       where,
       data: { estado: "CANCELADO", motivo: parsed.motivo },
     });
+
+    // Enviar notificación de cancelación si encontramos el turno
+    if (turnoAnterior?.paciente?.email) {
+      try {
+        await sendTurnoNotification(
+          turnoAnterior.paciente.email,
+          turnoAnterior,
+          turnoAnterior.paciente,
+          "cancelacion",
+          parsed.motivo || undefined
+        );
+      } catch (err) {
+        console.error("Error enviando email de cancelación:", err);
+      }
+    }
 
     await revalidatePaths([`/admin/turnos`, `/medico`]);
 
@@ -234,7 +271,7 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
 
     const nuevaFecha = parseISO(parsed.nuevaFecha);
 
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx) => {
       // validar nuevo slot (misma especialidad, mismo profesional, misma obra social del paciente)
       await validarSlotYCompatibilidad(tx, {
         clinicId: existing.clinicId,
@@ -277,17 +314,14 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
       });
 
       if (turnoFull) {
-        await sendConfirmationEmail({
-          to: turnoFull.paciente.email,
-          turno: {
-            codigo: turnoFull.codigo,
-            fecha: turnoFull.fecha,
-            profesional: { nombre: turnoFull.profesional.nombre },
-            especialidad: { nombre: turnoFull.especialidad.nombre },
-          },
-          paciente: turnoFull.paciente,
-          pdfUrl: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/turnos/${turnoFull.codigo}/download`,
-        });
+        // Enviar notificación de reprogramación
+        await sendTurnoNotification(
+          turnoFull.paciente.email,
+          turnoFull,
+          turnoFull.paciente,
+          "reprogramacion",
+          turnoFull.motivo || undefined
+        );
       }
     } catch (err) {
       console.error("Failed to send reprogram email", err);

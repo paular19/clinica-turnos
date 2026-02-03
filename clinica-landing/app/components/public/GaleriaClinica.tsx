@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 const imagenes = [
-  { src: "/assets/galeriar2.JPG", alt: "Instalaciones de la clínica" },
-  { src: "/assets/galeria2.jpeg", alt: "Sala de espera" },
-  { src: "/assets/galeria3.jpeg", alt: "Consultorios médicos" },
-  { src: "/assets/galeria4.JPG", alt: "Área de internación" },
-  { src: "/assets/galeriar1.jpeg", alt: "Equipamiento médico" },
-  { src: "/assets/galeria6.jpeg", alt: "Quirófano" },
+  { src: "/assets/fotocambio1.jpg", alt: "Instalaciones de la clínica" },
+  { src: "/assets/fotocambio2.jpg", alt: "Sala de espera" },
+  { src: "/assets/fotocambio3.jpg", alt: "Consultorios médicos" },
+  { src: "/assets/fotocambio4.jpg", alt: "Área de internación" },
+  { src: "/assets/fotocambio5.jpg", alt: "Equipo médico" },
+  { src: "/assets/galeriar1.jpeg", alt: "Tecnología y diagnóstico" },
 ];
 
 export default function GaleriaClinica() {

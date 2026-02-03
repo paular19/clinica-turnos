@@ -65,8 +65,8 @@ async function handleSubmitTurno(formData: FormData) {
         apellido,
         dni,
         email,
-        telefono: "",
-        obraSocialId: obraSocialId || undefined,
+        telefono: undefined,
+        obraSocialId: obraSocialId && obraSocialId.length > 0 ? obraSocialId : undefined,
       },
     };
 

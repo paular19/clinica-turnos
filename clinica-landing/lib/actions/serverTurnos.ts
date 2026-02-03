@@ -10,7 +10,6 @@ import {
   ReprogramTurnoInput,
 } from "../zod/schemas";
 import { genCodigo, sanitizeString, parseISO } from "../utils/sanitize";
-import { sendConfirmationEmail } from "../email/sendConfirmationEmail";
 import { sendTurnoNotification } from "../email/sendTurnoNotification";
 import { revalidatePaths } from "../utils/revalidate";
 import { getTurnoByCodigo } from "../queries/turnos";
@@ -171,7 +170,7 @@ export async function crearTurno(data: CrearTurnoInput) {
 
     await revalidatePaths([`/turnos/confirmacion`, `/admin/turnos`, `/medico`]);
 
-    // Email con datos reales (no vacío)
+    // Email con datos reales
     try {
       const turnoFull = await prisma.turno.findUnique({
         where: { id: result.turno.id },
@@ -179,20 +178,15 @@ export async function crearTurno(data: CrearTurnoInput) {
       });
 
       if (turnoFull) {
-        await sendConfirmationEmail({
-          to: turnoFull.paciente.email,
-          turno: {
-            codigo: turnoFull.codigo,
-            fecha: turnoFull.fecha,
-            profesional: { nombre: turnoFull.profesional.nombre },
-            especialidad: { nombre: turnoFull.especialidad.nombre },
-          },
-          paciente: turnoFull.paciente,
-          pdfUrl: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/turnos/${turnoFull.codigo}/download`,
-        });
+        await sendTurnoNotification(
+          turnoFull.paciente.email,
+          turnoFull,
+          turnoFull.paciente,
+          "creacion"
+        );
       }
     } catch (err) {
-      console.error("Failed to send confirmation email", err);
+      console.error("Failed to send notification email", err);
     }
 
     return { turnoId: result.turno.id, codigo: result.turno.codigo };

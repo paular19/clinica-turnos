@@ -1,6 +1,7 @@
 import { render } from "@react-email/render";
 import TurnoNotificationEmail from "./TurnoNotificationEmail";
 import { Turno, Paciente } from "@prisma/client";
+import { Resend } from "resend";
 
 type NotificationType = "creacion" | "cancelacion" | "reprogramacion";
 
@@ -9,17 +10,11 @@ type TurnoWithRelations = Partial<Turno> & {
     profesional?: { nombre?: string };
 };
 
-let resend: any = null;
+const resend = process.env.RESEND_API_KEY
+    ? new Resend(process.env.RESEND_API_KEY)
+    : null;
 
-// Inicializar Resend si está disponible
-if (process.env.RESEND_API_KEY) {
-    try {
-        const { Resend } = require("resend");
-        resend = new Resend(process.env.RESEND_API_KEY);
-    } catch (err) {
-        console.warn("⚠️  Resend no está instalado. Instala con: npm install resend");
-    }
-}
+console.log("🔧 Resend inicializado:", resend ? "✅ CON API KEY" : "⚠️  SIN API KEY");
 
 export async function sendTurnoNotification(
     to: string,
@@ -45,6 +40,7 @@ export async function sendTurnoNotification(
     try {
         if (resend) {
             // Usar Resend si está configurado
+            console.log("📨 Enviando con Resend...");
             const result = await resend.emails.send({
                 from: process.env.RESEND_FROM || "Clínica San Rafael <noreply@clinicasanrafael.com>",
                 to,
@@ -52,16 +48,19 @@ export async function sendTurnoNotification(
                 html,
             });
 
+            console.log("Resultado Resend:", JSON.stringify(result, null, 2));
+
             if (result.error) {
                 throw new Error(`Resend error: ${result.error.message}`);
             }
 
-            console.log(`✅ Email enviado exitosamente a: ${to} (Resend)`);
-            return result.id;
+            console.log(`✅ Email enviado exitosamente a: ${to} (Resend ID: ${result.data?.id})`);
+            return result.data?.id || `success-${Date.now()}`;
         } else {
             // Fallback: Modo desarrollo (loguear a consola)
-            console.log(`⚠️  Modo desarrollo: Email JSON generado (no enviado)`);
-            console.log(JSON.stringify({ to, subject: asuntoMap[tipo], html }, null, 2));
+            console.log(`⚠️  ADVERTENCIA: Resend NO está configurado. Email NO se envió.`);
+            console.log(`API_KEY: ${process.env.RESEND_API_KEY ? "✅ Presente" : "❌ FALTANTE"}`);
+            console.log(JSON.stringify({ to, subject: asuntoMap[tipo] }, null, 2));
             return `dev-${Date.now()}`;
         }
     } catch (err) {
@@ -69,3 +68,4 @@ export async function sendTurnoNotification(
         throw err;
     }
 }
+

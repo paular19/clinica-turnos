@@ -3,6 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '../db/prisma';
+import { sendTurnoNotification } from '../email/sendTurnoNotification';
 
 export async function getTurnosByProfesional(profesionalId: string) {
     const { userId } = await auth();
@@ -71,6 +72,21 @@ export async function createTurno(data: {
     });
 
     revalidatePath('/dashboard/turnos');
+
+    // Enviar notificación de creación al paciente
+    if (turno.paciente?.email) {
+        try {
+            await sendTurnoNotification(
+                turno.paciente.email,
+                turno,
+                turno.paciente,
+                'creacion'
+            );
+        } catch (err) {
+            console.error('Error enviando email de creación:', err);
+        }
+    }
+
     return turno;
 }
 
@@ -92,6 +108,22 @@ export async function cancelarTurno(id: string, motivo?: string) {
     });
 
     revalidatePath('/dashboard/turnos');
+
+    // Enviar notificación de cancelación al paciente
+    if (turno.paciente?.email) {
+        try {
+            await sendTurnoNotification(
+                turno.paciente.email,
+                turno,
+                turno.paciente,
+                'cancelacion',
+                turno.motivo || undefined
+            );
+        } catch (err) {
+            console.error('Error enviando email de cancelación:', err);
+        }
+    }
+
     return turno;
 }
 
@@ -102,7 +134,7 @@ export async function confirmarTurno(id: string) {
     const turno = await prisma.turno.update({
         where: { id },
         data: {
-            estado: 'CANCELADO',
+            estado: 'CONFIRMADO',
         },
         include: {
             paciente: true,
@@ -112,6 +144,21 @@ export async function confirmarTurno(id: string) {
     });
 
     revalidatePath('/dashboard/turnos');
+
+    // Enviar notificación de confirmación al paciente
+    if (turno.paciente?.email) {
+        try {
+            await sendTurnoNotification(
+                turno.paciente.email,
+                turno,
+                turno.paciente,
+                'creacion'
+            );
+        } catch (err) {
+            console.error('Error enviando email de confirmación:', err);
+        }
+    }
+
     return turno;
 }
 

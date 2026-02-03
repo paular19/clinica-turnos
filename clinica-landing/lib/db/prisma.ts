@@ -1,7 +1,7 @@
 // lib/db/prisma.ts
+// Force rebuild on Vercel
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -15,11 +15,9 @@ function makePrismaClient() {
   // (así no explota en build/collect)
   if (!url) return undefined;
 
-  const pool = new Pool({
+  const adapter = new PrismaPg({
     connectionString: url,
   });
-
-  const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
     adapter,

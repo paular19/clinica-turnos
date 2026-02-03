@@ -10,7 +10,7 @@ import {
   ReprogramTurnoInput,
 } from "../zod/schemas";
 import { genCodigo, sanitizeString, parseISO } from "../utils/sanitize";
-import { sendConfirmationEmail } from "../email/sendConfirmationEmail";
+import { sendTurnoNotification } from "../email/sendTurnoNotification";
 import { revalidatePaths } from "../utils/revalidate";
 import { getTurnoByCodigo } from "../queries/turnos";
 import { generateComprobantePDF } from "../pdf/generateComprobante";
@@ -165,25 +165,15 @@ export async function crearTurno(data: CrearTurnoInput) {
       });
 
       if (turnoFull) {
-        await sendConfirmationEmail({
-          to: turnoFull.paciente.email,
-          turno: {
-            codigo: turnoFull.codigo,
-            fecha: turnoFull.fecha,
-            profesional: { nombre: turnoFull.profesional.nombre },
-            especialidad: { nombre: turnoFull.especialidad.nombre },
-          },
-          paciente: turnoFull.paciente,
-          pdfUrl: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/turnos/${turnoFull.codigo}/download`,
-        });
+        await sendTurnoNotification(
+          turnoFull.paciente.email,
+          turnoFull,
+          turnoFull.paciente,
+          "creacion"
+        );
       }
     } catch (err) {
-      console.error("Failed to send confirmation email", err);
-    }
-
-    return { turnoId: result.turno.id, codigo: result.turno.codigo };
-  } catch (err) {
-    if (err instanceof z.ZodError) {
+      console.error("Failed to send turno notification", err);
       console.error("Validation error:", JSON.stringify(err.errors, null, 2));
       throw err;
     }
@@ -275,20 +265,15 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
       });
 
       if (turnoFull) {
-        await sendConfirmationEmail({
-          to: turnoFull.paciente.email,
-          turno: {
-            codigo: turnoFull.codigo,
-            fecha: turnoFull.fecha,
-            profesional: { nombre: turnoFull.profesional.nombre },
-            especialidad: { nombre: turnoFull.especialidad.nombre },
-          },
-          paciente: turnoFull.paciente,
-          pdfUrl: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/turnos/${turnoFull.codigo}/download`,
-        });
+        await sendTurnoNotification(
+          turnoFull.paciente.email,
+          turnoFull,
+          turnoFull.paciente,
+          "reprogramacion"
+        );
       }
     } catch (err) {
-      console.error("Failed to send reprogram email", err);
+      console.error("Failed to send reprogram notification", err);
     }
 
     return { turnoId: result.newTurno.id, codigo: result.newTurno.codigo };

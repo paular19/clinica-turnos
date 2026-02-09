@@ -8,10 +8,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 interface PageProps {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }
 
 export default async function EditarProfesionalPage({ params }: PageProps) {
+    const { id: profesionalId } = await params;
+
     const { userId } = await auth();
 
     if (!userId) {
@@ -24,10 +26,10 @@ export default async function EditarProfesionalPage({ params }: PageProps) {
 
     const clinicId = usuario?.clinicId || SHARED_CLINIC_ID;
 
-    const profesional = await prisma.profesional.findFirst({
+
+    const profesional = await prisma.profesional.findUnique({
         where: {
-            id: params.id,
-            clinicId,
+            id: profesionalId,
         },
         include: {
             especialidades: true,
@@ -39,7 +41,7 @@ export default async function EditarProfesionalPage({ params }: PageProps) {
         },
     });
 
-    if (!profesional) {
+    if (!profesional || profesional.clinicId !== clinicId) {
         redirect('/dashboard/profesionales');
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createProfesional, updateProfesional } from '@/lib/actions/admin';
 
@@ -33,6 +33,8 @@ export default function ProfesionalForm({
 }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [nombre, setNombre] = useState(profesional?.nombre ?? '');
+    const [matricula, setMatricula] = useState(profesional?.matricula ?? '');
     const [selectedEspecialidades, setSelectedEspecialidades] = useState<string[]>(
         profesional?.especialidades.map(e => e.id) || []
     );
@@ -40,13 +42,16 @@ export default function ProfesionalForm({
         profesional?.obraSociales.map(os => os.obraSocial.id) || []
     );
 
+    useEffect(() => {
+        setNombre(profesional?.nombre ?? '');
+        setMatricula(profesional?.matricula ?? '');
+        setSelectedEspecialidades(profesional?.especialidades.map(e => e.id) || []);
+        setSelectedObrasSociales(profesional?.obraSociales.map(os => os.obraSocial.id) || []);
+    }, [profesional]);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-
-        const formData = new FormData(e.currentTarget);
-        const nombre = formData.get('nombre') as string;
-        const matricula = formData.get('matricula') as string;
 
         try {
             if (profesional) {
@@ -100,7 +105,8 @@ export default function ProfesionalForm({
                     id="nombre"
                     name="nombre"
                     required
-                    defaultValue={profesional?.nombre}
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Dr. Juan Pérez"
                 />
@@ -114,7 +120,8 @@ export default function ProfesionalForm({
                     type="text"
                     id="matricula"
                     name="matricula"
-                    defaultValue={profesional?.matricula || ''}
+                    value={matricula}
+                    onChange={(e) => setMatricula(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="MP 12345"
                 />

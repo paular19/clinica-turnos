@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { UserButton } from '@clerk/nextjs';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
@@ -37,7 +38,16 @@ export default async function DashboardLayout({
             {/* Sidebar */}
             <aside className="w-64 bg-white shadow-lg">
                 <div className="p-6">
-                    <h1 className="text-2xl font-bold text-blue-600">Clínica Admin</h1>
+                    <Link href="/dashboard" className="inline-flex items-center">
+                        <Image
+                            src="/assets/logo-clinica.png"
+                            alt="Clinica"
+                            width={260}
+                            height={96}
+                            className="h-14 w-auto object-contain"
+                            priority
+                        />
+                    </Link>
                 </div>
 
                 <nav className="px-4 space-y-2">

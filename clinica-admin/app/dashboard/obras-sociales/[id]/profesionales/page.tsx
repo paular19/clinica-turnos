@@ -12,7 +12,7 @@ export const revalidate = 0;
 export default async function ObraSocialProfesionalesPage({
     params,
 }: {
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
     const { userId } = await auth();
 
@@ -20,7 +20,7 @@ export default async function ObraSocialProfesionalesPage({
         redirect('/sign-in');
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const usuario = await prisma.usuario.findUnique({
         where: { clerkId: userId },
@@ -29,7 +29,7 @@ export default async function ObraSocialProfesionalesPage({
     const clinicId = usuario?.clinicId || SHARED_CLINIC_ID;
 
     const obraSocial = await prisma.obraSocial.findUnique({
-        where: { id, clinicId },
+        where: { id },
         include: {
             profesionales: {
                 include: {
@@ -43,7 +43,7 @@ export default async function ObraSocialProfesionalesPage({
         },
     });
 
-    if (!obraSocial) {
+    if (!obraSocial || obraSocial.clinicId !== clinicId) {
         redirect('/dashboard/obras-sociales');
     }
 

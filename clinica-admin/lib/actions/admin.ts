@@ -211,8 +211,19 @@ export async function deleteObraSocial(id: string) {
     const { userId } = await auth();
     if (!userId) throw new Error('No autorizado');
 
-    await prisma.obraSocial.delete({
-        where: { id },
+    await prisma.$transaction(async (tx) => {
+        await tx.profesionalObraSocial.deleteMany({
+            where: { obraSocialId: id },
+        });
+
+        await tx.paciente.updateMany({
+            where: { obraSocialId: id },
+            data: { obraSocialId: null },
+        });
+
+        await tx.obraSocial.delete({
+            where: { id },
+        });
     });
 
     revalidatePath('/dashboard/obras-sociales');

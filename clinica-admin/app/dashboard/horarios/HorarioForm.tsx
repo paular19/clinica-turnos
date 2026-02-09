@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createHorario } from '@/lib/actions/admin';
+import { createHorario, updateHorario } from '@/lib/actions/admin';
 
 const DIAS_SEMANA = [
     { value: 1, label: 'Lunes' },
@@ -20,38 +20,68 @@ interface Profesional {
     especialidades: { nombre: string }[];
 }
 
+interface Horario {
+    id: string;
+    profesionalId: string;
+    diaSemana: number;
+    horaInicio: string;
+    horaFin: string;
+    intervaloMin: number;
+    profesional: Profesional;
+}
+
 export default function HorarioForm({
-    profesionales
+    profesionales,
+    horario,
 }: {
-    profesionales: Profesional[];
+    profesionales?: Profesional[];
+    horario?: Horario;
 }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [profesionalId, setProfesionalId] = useState(horario?.profesionalId ?? '');
+    const [diaSemana, setDiaSemana] = useState(horario ? String(horario.diaSemana) : '');
+    const [horaInicio, setHoraInicio] = useState(horario?.horaInicio ?? '');
+    const [horaFin, setHoraFin] = useState(horario?.horaFin ?? '');
+    const [intervaloMin, setIntervaloMin] = useState(horario ? String(horario.intervaloMin) : '');
+
+    useEffect(() => {
+        setProfesionalId(horario?.profesionalId ?? '');
+        setDiaSemana(horario ? String(horario.diaSemana) : '');
+        setHoraInicio(horario?.horaInicio ?? '');
+        setHoraFin(horario?.horaFin ?? '');
+        setIntervaloMin(horario ? String(horario.intervaloMin) : '');
+    }, [horario]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        const formData = new FormData(e.currentTarget);
-        const profesionalId = formData.get('profesionalId') as string;
-        const diaSemana = parseInt(formData.get('diaSemana') as string);
-        const horaInicio = formData.get('horaInicio') as string;
-        const horaFin = formData.get('horaFin') as string;
-        const intervaloMin = parseInt(formData.get('intervaloMin') as string);
-
         try {
-            await createHorario({
-                profesionalId,
-                diaSemana,
-                horaInicio,
-                horaFin,
-                intervaloMin,
-            });
+            const diaSemanaValue = parseInt(diaSemana, 10);
+            const intervaloMinValue = parseInt(intervaloMin, 10);
+
+            if (horario) {
+                await updateHorario(horario.id, {
+                    diaSemana: diaSemanaValue,
+                    horaInicio,
+                    horaFin,
+                    intervaloMin: intervaloMinValue,
+                });
+            } else {
+                await createHorario({
+                    profesionalId,
+                    diaSemana: diaSemanaValue,
+                    horaInicio,
+                    horaFin,
+                    intervaloMin: intervaloMinValue,
+                });
+            }
 
             router.push('/dashboard/horarios');
             router.refresh();
         } catch (error) {
-            alert('Error al crear el horario');
+            alert(`Error al ${horario ? 'actualizar' : 'crear'} el horario`);
             setIsSubmitting(false);
         }
     };
@@ -62,19 +92,27 @@ export default function HorarioForm({
                 <label htmlFor="profesionalId" className="block text-sm font-medium text-gray-700 mb-2">
                     Profesional *
                 </label>
-                <select
-                    id="profesionalId"
-                    name="profesionalId"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                    <option value="">Seleccionar profesional</option>
-                    {profesionales.map((prof) => (
-                        <option key={prof.id} value={prof.id}>
-                            {prof.nombre} - {prof.especialidades.map(e => e.nombre).join(', ')}
-                        </option>
-                    ))}
-                </select>
+                {horario ? (
+                    <div className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+                        {horario.profesional.nombre} - {horario.profesional.especialidades.map(e => e.nombre).join(', ')}
+                    </div>
+                ) : (
+                    <select
+                        id="profesionalId"
+                        name="profesionalId"
+                        required
+                        value={profesionalId}
+                        onChange={(e) => setProfesionalId(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                        <option value="">Seleccionar profesional</option>
+                        {profesionales?.map((prof) => (
+                            <option key={prof.id} value={prof.id}>
+                                {prof.nombre} - {prof.especialidades.map(e => e.nombre).join(', ')}
+                            </option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             <div>
@@ -85,6 +123,8 @@ export default function HorarioForm({
                     id="diaSemana"
                     name="diaSemana"
                     required
+                    value={diaSemana}
+                    onChange={(e) => setDiaSemana(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                     <option value="">Seleccionar día</option>
@@ -106,6 +146,8 @@ export default function HorarioForm({
                         id="horaInicio"
                         name="horaInicio"
                         required
+                        value={horaInicio}
+                        onChange={(e) => setHoraInicio(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
@@ -119,6 +161,8 @@ export default function HorarioForm({
                         id="horaFin"
                         name="horaFin"
                         required
+                        value={horaFin}
+                        onChange={(e) => setHoraFin(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
@@ -132,6 +176,8 @@ export default function HorarioForm({
                     id="intervaloMin"
                     name="intervaloMin"
                     required
+                    value={intervaloMin}
+                    onChange={(e) => setIntervaloMin(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                     <option value="">Seleccionar intervalo</option>

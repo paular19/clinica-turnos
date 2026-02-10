@@ -9,7 +9,9 @@ declare global {
 }
 
 function makePrismaClient() {
-  const url = process.env.DATABASE_URL;
+  const url = normalizeDatabaseUrl(
+    process.env.DATABASE_URL || process.env.DIRECT_URL
+  );
 
   // ✅ IMPORTANTE: no inicializamos Prisma si no hay DATABASE_URL
   // (así no explota en build/collect)
@@ -23,6 +25,24 @@ function makePrismaClient() {
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : [],
   });
+}
+
+function normalizeDatabaseUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+
+  // If using a pooler URL, add recommended params for stability.
+  if (url.includes("-pooler.")) {
+    const parsed = new URL(url);
+    if (!parsed.searchParams.has("pgbouncer")) {
+      parsed.searchParams.set("pgbouncer", "true");
+    }
+    if (!parsed.searchParams.has("connection_limit")) {
+      parsed.searchParams.set("connection_limit", "1");
+    }
+    return parsed.toString();
+  }
+
+  return url;
 }
 
 /**
@@ -39,4 +59,11 @@ export function getPrisma(): PrismaClient {
 
   global.__prisma = client;
   return client;
+}
+
+export async function resetPrisma(): Promise<void> {
+  if (global.__prisma) {
+    await global.__prisma.$disconnect();
+    global.__prisma = undefined;
+  }
 }

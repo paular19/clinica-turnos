@@ -71,7 +71,7 @@ async function validarSlotYCompatibilidad(tx: any, params: {
   const okSlot = horarios.some((h: any) => {
     const start = toMinutes(h.horaInicio);
     const end = toMinutes(h.horaFin);
-    const step = h.intervaloMin || 15;
+    const step = h.intervaloMin || 45;
 
     if (minutos < start || minutos >= end) return false;
     return (minutos - start) % step === 0;

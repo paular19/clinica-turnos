@@ -10,7 +10,8 @@ import {
     Calendar,
     Clock,
     Building2,
-    UserCog
+    UserCog,
+    CalendarX
 } from 'lucide-react';
 
 export default async function DashboardLayout({
@@ -62,6 +63,9 @@ export default async function DashboardLayout({
                     </NavLink>
                     <NavLink href="/dashboard/horarios" icon={<Clock size={20} />}>
                         Horarios
+                    </NavLink>
+                    <NavLink href="/dashboard/horarios/bloqueos" icon={<CalendarX size={20} />}>
+                        Días Bloqueados
                     </NavLink>
                     <NavLink href="/dashboard/turnos" icon={<Calendar size={20} />}>
                         Turnos

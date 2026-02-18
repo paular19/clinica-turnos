@@ -419,7 +419,7 @@ export async function cargarHorariosYGenerarTurnos() {
                     diaSemana: dia,
                     horaInicio: horario.inicio,
                     horaFin: horario.fin,
-                    intervaloMin: 15,
+                    intervaloMin: 45,
                     profesionalId: prof.id,
                     clinicId: SHARED_CLINIC_ID,
                 },
@@ -455,8 +455,8 @@ export async function cargarHorariosYGenerarTurnos() {
                 const inicio = horaAMinutos(h.horaInicio);
                 const fin = horaAMinutos(h.horaFin);
 
-                // Generar turnos cada 15 minutos
-                for (let minuto = inicio; minuto < fin; minuto += 15) {
+                // Generar turnos cada 45 minutos (30 min turno + 15 min intervalo)
+                for (let minuto = inicio; minuto < fin; minuto += 45) {
                     const horaString = minutosAHora(minuto);
                     const [hh, mm] = horaString.split(':');
 

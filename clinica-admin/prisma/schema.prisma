@@ -21,6 +21,7 @@ model Clinic {
   obraSociales            ObraSocial[]
   horarios                Horario[]
   profesionalObraSociales ProfesionalObraSocial[]
+  diasBloqueados          DiaBloqueado[]
 }
 
 model Usuario {
@@ -49,6 +50,7 @@ model Profesional {
   horarios       Horario[]
   turnos         Turno[]
   obraSociales   ProfesionalObraSocial[]
+  diasBloqueados DiaBloqueado[]
 
   @@index([clinicId])
 }
@@ -148,6 +150,21 @@ model ProfesionalObraSocial {
 
   @@id([profesionalId, obraSocialId])
   @@index([clinicId])
+}
+
+model DiaBloqueado {
+  id            String      @id @default(uuid())
+  fecha         DateTime    @db.Date
+  motivo        String?
+  profesionalId String
+  profesional   Profesional @relation(fields: [profesionalId], references: [id], onDelete: Cascade)
+  clinicId      String
+  clinic        Clinic      @relation(fields: [clinicId], references: [id])
+  createdAt     DateTime    @default(now())
+
+  @@unique([fecha, profesionalId, clinicId])
+  @@index([profesionalId, clinicId])
+  @@index([fecha])
 }
 
 enum Rol {

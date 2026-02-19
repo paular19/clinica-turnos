@@ -174,11 +174,16 @@ export async function crearTurno(data: CrearTurnoInput) {
       }
     } catch (err) {
       console.error("Failed to send turno notification", err);
-      console.error("Validation error:", JSON.stringify(err.errors, null, 2));
+    }
+
+    return { turnoId: result.turno.id, codigo: result.turno.codigo };
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      console.error("Validation error:", JSON.stringify(err.issues, null, 2));
       throw err;
     }
     console.error("crearTurno error", err);
-    throw err; // Throw the actual error instead of wrapping it
+    throw err;
   }
 }
 

@@ -7,6 +7,30 @@ import { Prisma } from '@prisma/client';
 
 // PROFESIONALES
 
+export async function getProfesionales() {
+    const { userId } = await auth();
+    if (!userId) throw new Error('No autorizado');
+
+    const usuario = await prisma.usuario.findUnique({
+        where: { clerkId: userId },
+    });
+
+    let clinicId = usuario?.clinicId;
+    if (!clinicId) {
+        const firstClinic = await prisma.clinic.findFirst();
+        if (!firstClinic) {
+            return [];
+        }
+        clinicId = firstClinic.id;
+    }
+
+    return prisma.profesional.findMany({
+        where: { clinicId },
+        select: { id: true, nombre: true },
+        orderBy: { nombre: 'asc' },
+    });
+}
+
 export async function createProfesional(data: {
     nombre: string;
     matricula?: string;

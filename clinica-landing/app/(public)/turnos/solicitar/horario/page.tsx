@@ -130,6 +130,22 @@ export default async function HorarioPage({ searchParams }: Props) {
     orderBy: { diaSemana: "asc" },
   });
 
+  // Obtener días bloqueados para este profesional
+  const diasBloqueados = await prisma.diaBloqueado.findMany({
+    where: {
+      profesionalId,
+      clinicId,
+      fecha: {
+        gte: new Date(), // Solo futuro
+      },
+    },
+    select: { fecha: true },
+  });
+
+  const fechasBloqueadas = new Set(
+    diasBloqueados.map((d) => d.fecha.toISOString().split('T')[0])
+  );
+
   // Generar próximos 14 días de slots disponibles
   const slots: Array<{ fecha: Date; fechaISO: string; dia: string; hora: string }> = [];
 
@@ -140,6 +156,12 @@ export default async function HorarioPage({ searchParams }: Props) {
     const fechaBase = new Date(hoy);
     fechaBase.setDate(hoy.getDate() + i);
 
+    // Verificar si esta fecha está bloqueada
+    const fechaBaseISO = fechaBase.toISOString().split('T')[0];
+    if (fechasBloqueadas.has(fechaBaseISO)) {
+      continue; // Saltar días bloqueados
+    }
+
     const diaSemana = isoDow(fechaBase); // 1..7
 
     const horariosDelDia = horarios.filter((h) => h.diaSemana === diaSemana);
@@ -147,7 +169,7 @@ export default async function HorarioPage({ searchParams }: Props) {
     for (const horario of horariosDelDia) {
       const [horaInicio, minInicio] = horario.horaInicio.split(":").map(Number);
       const [horaFin, minFin] = horario.horaFin.split(":").map(Number);
-      const intervalo = horario.intervaloMin || 60;
+      const intervalo = horario.intervaloMin || 45;
 
       let minutoActual = horaInicio * 60 + minInicio;
       const minutoFin = horaFin * 60 + minFin;

@@ -33,11 +33,11 @@ export async function getTurnosAdmin(params: TurnosAdminParams) {
 
     ...(f?.fechaFrom || f?.fechaTo
       ? {
-          fecha: {
-            ...(f?.fechaFrom ? { gte: new Date(f.fechaFrom) } : {}),
-            ...(f?.fechaTo ? { lte: new Date(f.fechaTo) } : {}),
-          },
-        }
+        fecha: {
+          ...(f?.fechaFrom ? { gte: new Date(f.fechaFrom) } : {}),
+          ...(f?.fechaTo ? { lte: new Date(f.fechaTo) } : {}),
+        },
+      }
       : {}),
   };
 
@@ -99,6 +99,19 @@ export async function getDisponibilidadProfesional(params: {
   const day = new Date(`${dateISO}T00:00:00`);
   const diaSemana = isoDow(day);
 
+  // Verificar si el día está bloqueado
+  const diaBloqueado = await prisma.diaBloqueado.findUnique({
+    where: {
+      fecha_profesionalId_clinicId: {
+        fecha: day,
+        profesionalId,
+        clinicId,
+      },
+    },
+  });
+
+  if (diaBloqueado) return []; // Día bloqueado, sin horarios disponibles
+
   const horarios = await prisma.horario.findMany({
     where: { clinicId, profesionalId, diaSemana },
     select: { horaInicio: true, horaFin: true, intervaloMin: true },
@@ -129,7 +142,7 @@ export async function getDisponibilidadProfesional(params: {
   for (const h of horarios) {
     const startMin = toMinutes(h.horaInicio);
     const endMin = toMinutes(h.horaFin);
-    const step = h.intervaloMin || 15;
+    const step = h.intervaloMin || 45;
 
     for (let m = startMin; m + step <= endMin; m += step) {
       const hhmm = fromMinutes(m);

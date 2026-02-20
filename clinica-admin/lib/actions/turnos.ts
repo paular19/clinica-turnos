@@ -6,6 +6,35 @@ import { prisma } from '../db/prisma';
 import { sendTurnoNotification } from '../email/sendTurnoNotification';
 import { getDisponibilidadProfesional } from '../queries/turnos';
 
+const CLINIC_TZ = 'America/Argentina/Buenos_Aires';
+
+function toClinicDateISO(date: Date) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        timeZone: CLINIC_TZ,
+    }).formatToParts(date);
+
+    const year = parts.find((p) => p.type === 'year')?.value ?? '1970';
+    const month = parts.find((p) => p.type === 'month')?.value ?? '01';
+    const day = parts.find((p) => p.type === 'day')?.value ?? '01';
+    return `${year}-${month}-${day}`;
+}
+
+function toClinicHHMM(date: Date) {
+    const parts = new Intl.DateTimeFormat('es-AR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: CLINIC_TZ,
+    }).formatToParts(date);
+
+    const hh = parts.find((p) => p.type === 'hour')?.value ?? '00';
+    const mm = parts.find((p) => p.type === 'minute')?.value ?? '00';
+    return `${hh}:${mm}`;
+}
+
 export async function getTurnosByProfesional(profesionalId: string) {
     const { userId } = await auth();
     if (!userId) throw new Error('No autorizado');
@@ -243,6 +272,34 @@ export async function getProximosSlotsParaTurno(data: {
     const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
     const hoyISO = hoy.toISOString().split('T')[0];
 
+    const ultimoDia = new Date(hoy);
+    ultimoDia.setDate(hoy.getDate() + totalDias - 1);
+
+    const rangeStart = new Date(`${hoyISO}T00:00:00-03:00`);
+    const rangeEnd = new Date(`${ultimoDia.toISOString().split('T')[0]}T23:59:59.999-03:00`);
+
+    const turnosExistentes = await prisma.turno.findMany({
+        where: {
+            clinicId,
+            profesionalId: data.profesionalId,
+            estado: { not: 'CANCELADO' },
+            fecha: {
+                gte: rangeStart,
+                lte: rangeEnd,
+            },
+        },
+        select: { fecha: true },
+    });
+
+    const ocupadosPorDia = new Map<string, Set<string>>();
+    for (const turno of turnosExistentes) {
+        const fechaISO = toClinicDateISO(turno.fecha);
+        const hora = toClinicHHMM(turno.fecha);
+        const horas = ocupadosPorDia.get(fechaISO) ?? new Set<string>();
+        horas.add(hora);
+        ocupadosPorDia.set(fechaISO, horas);
+    }
+
     const slots: Array<{ fecha: string; dia: string; hora: string }> = [];
 
     for (let i = 0; i < totalDias; i++) {
@@ -256,7 +313,13 @@ export async function getProximosSlotsParaTurno(data: {
             dateISO: fechaISO,
         });
 
+        const horasOcupadas = ocupadosPorDia.get(fechaISO) ?? new Set<string>();
+
         for (const hora of horas) {
+            if (horasOcupadas.has(hora)) {
+                continue;
+            }
+
             const [h, m] = hora.split(':').map(Number);
             const minutosSlot = h * 60 + m;
             if (fechaISO === hoyISO && minutosSlot <= minutosAhora) {

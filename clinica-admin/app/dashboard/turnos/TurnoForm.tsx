@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createTurno } from '@/lib/actions/turnos';
+import { createPacienteParaTurno, createTurno, getProximosSlotsParaTurno } from '@/lib/actions/turnos';
+import { AlertCircle, UserPlus } from 'lucide-react';
 
 interface Profesional {
     id: string;
@@ -22,6 +23,12 @@ interface Especialidad {
     nombre: string;
 }
 
+interface SlotDisponible {
+    fecha: string;
+    dia: string;
+    hora: string;
+}
+
 export default function TurnoForm({
     profesionales,
     pacientes,
@@ -34,21 +41,88 @@ export default function TurnoForm({
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedProfesional, setSelectedProfesional] = useState('');
+    const [selectedPacienteId, setSelectedPacienteId] = useState('');
+    const [selectedSlot, setSelectedSlot] = useState('');
+    const [slotsDisponibles, setSlotsDisponibles] = useState<SlotDisponible[]>([]);
+    const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+    const [slotsError, setSlotsError] = useState('');
+    const [pacientesList, setPacientesList] = useState<Paciente[]>(pacientes);
+    const [showNuevoPaciente, setShowNuevoPaciente] = useState(false);
+    const [isCreatingPaciente, setIsCreatingPaciente] = useState(false);
+    const [turnoError, setTurnoError] = useState('');
+    const [pacienteError, setPacienteError] = useState('');
+    const [nuevoPaciente, setNuevoPaciente] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        email: '',
+        telefono: '',
+    });
+
+    const ordenarPacientes = (lista: Paciente[]) => {
+        return [...lista].sort((a, b) => {
+            const apellidos = a.apellido.localeCompare(b.apellido, 'es', { sensitivity: 'base' });
+            if (apellidos !== 0) return apellidos;
+            return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+        });
+    };
+
+    const handleCrearPaciente = async () => {
+        setPacienteError('');
+        setIsCreatingPaciente(true);
+
+        try {
+            const pacienteCreado = await createPacienteParaTurno({
+                nombre: nuevoPaciente.nombre,
+                apellido: nuevoPaciente.apellido,
+                dni: nuevoPaciente.dni,
+                email: nuevoPaciente.email,
+                telefono: nuevoPaciente.telefono || undefined,
+            });
+
+            setPacientesList((prev) => ordenarPacientes([...prev, pacienteCreado]));
+            setSelectedPacienteId(pacienteCreado.id);
+            setNuevoPaciente({ nombre: '', apellido: '', dni: '', email: '', telefono: '' });
+            setShowNuevoPaciente(false);
+        } catch (error: any) {
+            setPacienteError(error.message || 'No se pudo crear el paciente');
+        } finally {
+            setIsCreatingPaciente(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setTurnoError('');
 
         const formData = new FormData(e.currentTarget);
-        const fechaStr = formData.get('fecha') as string;
-        const horaStr = formData.get('hora') as string;
-        const pacienteId = formData.get('pacienteId') as string;
+        const selectedSlotValue = selectedSlot;
+        const pacienteId = selectedPacienteId;
         const profesionalId = formData.get('profesionalId') as string;
         const especialidadId = formData.get('especialidadId') as string;
         const motivo = formData.get('motivo') as string;
 
-        // Combinar fecha y hora
-        const fecha = new Date(`${fechaStr}T${horaStr}:00`);
+        if (!pacienteId) {
+            setTurnoError('Seleccioná un paciente o cargá uno nuevo');
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (!selectedSlotValue) {
+            setTurnoError('Seleccioná un día y horario disponible');
+            setIsSubmitting(false);
+            return;
+        }
+
+        const [fechaStr, horaStr] = selectedSlotValue.split('|');
+        if (!fechaStr || !horaStr) {
+            setTurnoError('Horario inválido. Seleccioná otro horario disponible');
+            setIsSubmitting(false);
+            return;
+        }
+
+        const fecha = new Date(`${fechaStr}T${horaStr}:00-03:00`);
 
         try {
             await createTurno({
@@ -61,8 +135,8 @@ export default function TurnoForm({
 
             router.push('/dashboard/turnos');
             router.refresh();
-        } catch (error) {
-            alert('Error al crear el turno');
+        } catch (error: any) {
+            setTurnoError(error.message || 'Error al crear el turno');
             setIsSubmitting(false);
         }
     };
@@ -74,6 +148,35 @@ export default function TurnoForm({
             ?.especialidades || []
         : [];
 
+    useEffect(() => {
+        const cargarSlots = async () => {
+            if (!selectedProfesional) {
+                setSlotsDisponibles([]);
+                setSelectedSlot('');
+                setSlotsError('');
+                return;
+            }
+
+            setIsLoadingSlots(true);
+            setSlotsError('');
+            setSelectedSlot('');
+
+            try {
+                const slots = await getProximosSlotsParaTurno({
+                    profesionalId: selectedProfesional,
+                });
+                setSlotsDisponibles(slots);
+            } catch (error: any) {
+                setSlotsDisponibles([]);
+                setSlotsError(error.message || 'No se pudo cargar la disponibilidad');
+            } finally {
+                setIsLoadingSlots(false);
+            }
+        };
+
+        cargarSlots();
+    }, [selectedProfesional]);
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -84,15 +187,88 @@ export default function TurnoForm({
                     id="pacienteId"
                     name="pacienteId"
                     required
+                    value={selectedPacienteId}
+                    onChange={(e) => setSelectedPacienteId(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                     <option value="">Seleccionar paciente</option>
-                    {pacientes.map((pac) => (
+                    {pacientesList.map((pac) => (
                         <option key={pac.id} value={pac.id}>
                             {pac.apellido}, {pac.nombre} - DNI: {pac.dni}
                         </option>
                     ))}
                 </select>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setShowNuevoPaciente((prev) => !prev);
+                        setPacienteError('');
+                    }}
+                    className="mt-2 inline-flex items-center gap-2 text-sm text-blue-700 hover:text-blue-900"
+                >
+                    <UserPlus size={16} />
+                    {showNuevoPaciente ? 'Cancelar alta de paciente' : 'No está en la lista? Cargar paciente'}
+                </button>
+
+                {showNuevoPaciente && (
+                    <div className="mt-3 p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                                type="text"
+                                placeholder="Nombre *"
+                                value={nuevoPaciente.nombre}
+                                onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, nombre: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Apellido *"
+                                value={nuevoPaciente.apellido}
+                                onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, apellido: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <input
+                                type="text"
+                                placeholder="DNI *"
+                                value={nuevoPaciente.dni}
+                                onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, dni: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <input
+                                type="email"
+                                placeholder="Email *"
+                                value={nuevoPaciente.email}
+                                onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, email: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Teléfono (opcional)"
+                            value={nuevoPaciente.telefono}
+                            onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, telefono: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+
+                        {pacienteError && (
+                            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                <p className="text-sm text-red-700">{pacienteError}</p>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end">
+                            <button
+                                type="button"
+                                onClick={handleCrearPaciente}
+                                disabled={isCreatingPaciente}
+                                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {isCreatingPaciente ? 'Guardando paciente...' : 'Guardar paciente y seleccionar'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div>
@@ -141,32 +317,49 @@ export default function TurnoForm({
                 )}
             </div>
 
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Día y horario disponible *
+                </label>
+
+                {!selectedProfesional ? (
+                    <p className="text-sm text-gray-500">Primero seleccioná un profesional</p>
+                ) : isLoadingSlots ? (
+                    <p className="text-sm text-gray-500">Cargando disponibilidad...</p>
+                ) : slotsError ? (
+                    <p className="text-sm text-red-600">{slotsError}</p>
+                ) : slotsDisponibles.length === 0 ? (
+                    <p className="text-sm text-amber-700">No hay turnos disponibles en los próximos 14 días para este profesional.</p>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                        {slotsDisponibles.map((slot) => (
+                            <label key={`${slot.fecha}-${slot.hora}`} className="relative cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="fechaHora"
+                                    value={`${slot.fecha}|${slot.hora}`}
+                                    required
+                                    checked={selectedSlot === `${slot.fecha}|${slot.hora}`}
+                                    onChange={(e) => setSelectedSlot(e.target.value)}
+                                    className="peer sr-only"
+                                />
+                                <div className="border-2 border-slate-200 rounded-lg p-3 text-center transition-all hover:border-blue-500 hover:bg-blue-50 peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white">
+                                    <div className="text-xs font-medium capitalize">{slot.dia}</div>
+                                    <div className="text-lg font-bold mt-1">{slot.hora}</div>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="fecha" className="block text-sm font-medium text-gray-700 mb-2">
-                        Fecha *
-                    </label>
-                    <input
-                        type="date"
-                        id="fecha"
-                        name="fecha"
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                    <input type="hidden" name="fechaHora" value={selectedSlot} />
                 </div>
 
                 <div>
-                    <label htmlFor="hora" className="block text-sm font-medium text-gray-700 mb-2">
-                        Hora *
-                    </label>
-                    <input
-                        type="time"
-                        id="hora"
-                        name="hora"
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                    {/* reservado para mantener layout */}
                 </div>
             </div>
 
@@ -199,6 +392,13 @@ export default function TurnoForm({
                     Cancelar
                 </button>
             </div>
+
+            {turnoError && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{turnoError}</p>
+                </div>
+            )}
         </form>
     );
 }

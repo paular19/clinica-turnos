@@ -3,12 +3,11 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import Link from 'next/link';
 import { Plus, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import TurnoActions from './TurnoActions';
 import TurnosFiltros from './TurnosFiltros';
 
 const SHARED_CLINIC_ID = "406fc3e2-342a-4871-b52a-d63f95be4072";
+const CLINIC_TIMEZONE = 'America/Argentina/Buenos_Aires';
 
 export default async function TurnosPage({
     searchParams,
@@ -147,10 +146,19 @@ export default async function TurnosPage({
                                             <Calendar size={16} className="text-gray-400" />
                                             <div>
                                                 <div className="font-medium text-gray-900">
-                                                    {format(new Date(turno.fecha), "dd 'de' MMMM", { locale: es })}
+                                                    {new Intl.DateTimeFormat('es-AR', {
+                                                        day: '2-digit',
+                                                        month: 'long',
+                                                        timeZone: CLINIC_TIMEZONE,
+                                                    }).format(new Date(turno.fecha))}
                                                 </div>
                                                 <div className="text-gray-500">
-                                                    {format(new Date(turno.fecha), 'HH:mm')}
+                                                    {new Intl.DateTimeFormat('es-AR', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: false,
+                                                        timeZone: CLINIC_TIMEZONE,
+                                                    }).format(new Date(turno.fecha))}
                                                 </div>
                                             </div>
                                         </div>

@@ -6,6 +6,8 @@ import { es } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import TurnoMedicoActions from './TurnoMedicoActions';
 
+const CLINIC_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
 export default async function MedicosTurnosPage() {
     const { userId } = await auth();
 
@@ -184,7 +186,12 @@ export default async function MedicosTurnosPage() {
                             {turnos.map((turno: TurnoConRelaciones) => (
                                 <tr key={turno.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                        {format(new Date(turno.fecha), "HH:mm", { locale: es })}
+                                        {new Intl.DateTimeFormat('es-AR', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: false,
+                                            timeZone: CLINIC_TIMEZONE,
+                                        }).format(new Date(turno.fecha))}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-medium text-gray-900">

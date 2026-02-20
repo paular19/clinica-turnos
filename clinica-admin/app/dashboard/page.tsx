@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 
+const CLINIC_TIMEZONE = 'America/Argentina/Buenos_Aires';
+
 export default async function DashboardPage() {
     const user = await currentUser();
 
@@ -195,7 +197,12 @@ export default async function DashboardPage() {
                             {turnosHoy.map((turno: TurnoConRelaciones) => (
                                 <tr key={turno.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                        {format(new Date(turno.fecha), "HH:mm")}
+                                        {new Intl.DateTimeFormat('es-AR', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: false,
+                                            timeZone: CLINIC_TIMEZONE,
+                                        }).format(new Date(turno.fecha))}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-medium text-gray-900">

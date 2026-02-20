@@ -5,7 +5,8 @@ import { prisma } from '../db/prisma';
 import { revalidatePath } from 'next/cache';
 
 export async function crearBloqueo(data: {
-    profesionalId: string;
+    profesionalId?: string;
+    todosLosProfesionales?: boolean;
     fecha: Date;
     motivo?: string;
 }) {
@@ -29,32 +30,78 @@ export async function crearBloqueo(data: {
     const fechaNormalizada = new Date(data.fecha);
     fechaNormalizada.setHours(0, 0, 0, 0);
 
-    // Verificar si ya existe un bloqueo para ese día
-    const existente = await prisma.diaBloqueado.findUnique({
-        where: {
-            fecha_profesionalId_clinicId: {
+    const bloquearTodos = Boolean(data.todosLosProfesionales);
+    let profesionalIdsParaCancelar: string[] = [];
+
+    if (bloquearTodos) {
+        const profesionales = await prisma.profesional.findMany({
+            where: { clinicId },
+            select: { id: true },
+        });
+
+        if (profesionales.length === 0) {
+            throw new Error('No hay profesionales para bloquear en esta clínica');
+        }
+
+        const profesionalIds = profesionales.map((profesional) => profesional.id);
+        const existentes = await prisma.diaBloqueado.findMany({
+            where: {
+                clinicId,
                 fecha: fechaNormalizada,
+                profesionalId: { in: profesionalIds },
+            },
+            select: { profesionalId: true },
+        });
+
+        const idsExistentes = new Set(existentes.map((bloqueo) => bloqueo.profesionalId));
+        const idsParaCrear = profesionalIds.filter((profesionalId) => !idsExistentes.has(profesionalId));
+
+        if (idsParaCrear.length === 0) {
+            throw new Error('Todos los profesionales ya tienen bloqueo para esa fecha');
+        }
+
+        await prisma.diaBloqueado.createMany({
+            data: idsParaCrear.map((profesionalId) => ({
+                fecha: fechaNormalizada,
+                motivo: data.motivo,
+                profesionalId,
+                clinicId,
+            })),
+            skipDuplicates: true,
+        });
+
+        profesionalIdsParaCancelar = idsParaCrear;
+    } else {
+        if (!data.profesionalId) {
+            throw new Error('Seleccioná un profesional');
+        }
+
+        // Verificar si ya existe un bloqueo para ese día
+        const existente = await prisma.diaBloqueado.findUnique({
+            where: {
+                fecha_profesionalId_clinicId: {
+                    fecha: fechaNormalizada,
+                    profesionalId: data.profesionalId,
+                    clinicId,
+                },
+            },
+        });
+
+        if (existente) {
+            throw new Error('Ya existe un bloqueo para esta fecha y profesional');
+        }
+
+        await prisma.diaBloqueado.create({
+            data: {
+                fecha: fechaNormalizada,
+                motivo: data.motivo,
                 profesionalId: data.profesionalId,
                 clinicId,
             },
-        },
-    });
+        });
 
-    if (existente) {
-        throw new Error('Ya existe un bloqueo para esta fecha y profesional');
+        profesionalIdsParaCancelar = [data.profesionalId];
     }
-
-    const bloqueo = await prisma.diaBloqueado.create({
-        data: {
-            fecha: fechaNormalizada,
-            motivo: data.motivo,
-            profesionalId: data.profesionalId,
-            clinicId,
-        },
-        include: {
-            profesional: true,
-        },
-    });
 
     // Cancelar turnos existentes en ese día
     const startOfDay = new Date(fechaNormalizada);
@@ -64,7 +111,9 @@ export async function crearBloqueo(data: {
 
     await prisma.turno.updateMany({
         where: {
-            profesionalId: data.profesionalId,
+            profesionalId: {
+                in: profesionalIdsParaCancelar,
+            },
             clinicId,
             fecha: {
                 gte: startOfDay,
@@ -82,7 +131,11 @@ export async function crearBloqueo(data: {
 
     revalidatePath('/dashboard/horarios');
     revalidatePath('/dashboard/turnos');
-    return bloqueo;
+
+    return {
+        bloqueados: profesionalIdsParaCancelar.length,
+        todosLosProfesionales: bloquearTodos,
+    };
 }
 
 export async function eliminarBloqueo(bloqueoId: string) {

@@ -12,6 +12,7 @@ type Profesional = {
 
 export default function BloqueosForm({ profesionales }: { profesionales: Profesional[] }) {
     const router = useRouter();
+    const TODOS_VALUE = '__TODOS__';
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [profesionalId, setProfesionalId] = useState('');
@@ -31,8 +32,11 @@ export default function BloqueosForm({ profesionales }: { profesionales: Profesi
                 throw new Error('Seleccioná una fecha');
             }
 
+            const bloquearTodos = profesionalId === TODOS_VALUE;
+
             await crearBloqueo({
-                profesionalId,
+                profesionalId: bloquearTodos ? undefined : profesionalId,
+                todosLosProfesionales: bloquearTodos,
                 fecha: new Date(fecha),
                 motivo: motivo || undefined,
             });
@@ -76,6 +80,7 @@ export default function BloqueosForm({ profesionales }: { profesionales: Profesi
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                         <option value="">Seleccionar profesional</option>
+                        <option value={TODOS_VALUE}>Todos los profesionales</option>
                         {profesionales.map((prof) => (
                             <option key={prof.id} value={prof.id}>
                                 {prof.nombre}
@@ -133,7 +138,7 @@ export default function BloqueosForm({ profesionales }: { profesionales: Profesi
 
             <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-blue-800">
-                    ℹ️ Al bloquear un día, se cancelarán automáticamente todos los turnos programados para ese profesional en esa fecha.
+                    ℹ️ Al bloquear un día, se cancelarán automáticamente los turnos programados para el/los profesionales seleccionados en esa fecha.
                 </p>
             </div>
         </div>

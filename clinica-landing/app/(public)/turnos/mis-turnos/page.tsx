@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { buscarTurnoPorCodigo, cancelarTurno } from "@/lib/actions/mis-turnos-actions";
 
 type Turno = {
     id: string;
@@ -48,7 +47,18 @@ export default function MisTurnosPage() {
         setLoading(true);
 
         try {
-            const data = await buscarTurnoPorCodigo(codigo.trim());
+            const response = await fetch("/api/mis-turnos/buscar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ codigo: codigo.trim() }),
+            });
+
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload?.error || "Error al buscar el turno");
+            }
+
+            const data = payload?.turno;
             setTurno(data as Turno);
         } catch (err: any) {
             setError(err.message || "Error al buscar el turno");
@@ -69,7 +79,16 @@ export default function MisTurnosPage() {
         setShowCancelModal(false);
 
         try {
-            await cancelarTurno(turno.codigo);
+            const response = await fetch("/api/mis-turnos/cancelar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ codigo: turno.codigo }),
+            });
+
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload?.error || "Error al cancelar el turno");
+            }
 
             // Actualizar el estado del turno localmente
             setTurno({ ...turno, estado: "CANCELADO" });

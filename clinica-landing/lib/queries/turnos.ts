@@ -89,6 +89,21 @@ function fromMinutes(min: number) {
   return `${h}:${m}`;
 }
 
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
+
+function toClinicHHMM(date: Date) {
+  const parts = new Intl.DateTimeFormat("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: CLINIC_TZ,
+  }).formatToParts(date);
+
+  const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+  return `${hh}:${mm}`;
+}
+
 export async function getDisponibilidadProfesional(params: {
   clinicId: string;
   profesionalId: string;
@@ -120,8 +135,8 @@ export async function getDisponibilidadProfesional(params: {
 
   if (horarios.length === 0) return [];
 
-  const start = new Date(`${dateISO}T00:00:00`);
-  const end = new Date(`${dateISO}T23:59:59.999`);
+  const start = new Date(`${dateISO}T00:00:00-03:00`);
+  const end = new Date(`${dateISO}T23:59:59.999-03:00`);
 
   const turnos: Array<{ fecha: Date }> = await prisma.turno.findMany({
     where: {
@@ -134,7 +149,7 @@ export async function getDisponibilidadProfesional(params: {
   });
 
   const ocupados = new Set(
-    turnos.map((t) => fromMinutes(t.fecha.getHours() * 60 + t.fecha.getMinutes()))
+    turnos.map((t) => toClinicHHMM(t.fecha))
   );
 
   const slots: string[] = [];

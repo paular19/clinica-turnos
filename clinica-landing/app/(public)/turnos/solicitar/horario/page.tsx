@@ -2,18 +2,13 @@ import Link from "next/link";
 import { crearTurno } from "@/lib/actions/serverTurnos";
 import { redirect } from "next/navigation";
 import { getPrisma } from "@/lib/db/prisma";
+import { getDisponibilidadProfesional } from "@/lib/queries/turnos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-// Mapeo de días ISO (1=Lun, 7=Dom)
-function isoDow(date: Date) {
-  const d = date.getDay(); // 0..6 (Dom..Sáb)
-  return d === 0 ? 7 : d; // 1..7 (Lun..Dom)
 }
 
 /**
@@ -124,30 +119,8 @@ export default async function HorarioPage({ searchParams }: Props) {
 
   const clinicId = profesional.clinicId;
 
-  // ✅ Horarios del profesional (con clinicId verdadero)
-  const horarios = await prisma.horario.findMany({
-    where: { clinicId, profesionalId },
-    orderBy: { diaSemana: "asc" },
-  });
-
-  // Obtener días bloqueados para este profesional
-  const diasBloqueados = await prisma.diaBloqueado.findMany({
-    where: {
-      profesionalId,
-      clinicId,
-      fecha: {
-        gte: new Date(), // Solo futuro
-      },
-    },
-    select: { fecha: true },
-  });
-
-  const fechasBloqueadas = new Set(
-    diasBloqueados.map((d) => d.fecha.toISOString().split('T')[0])
-  );
-
-  // Generar próximos 14 días de slots disponibles
-  const slots: Array<{ fecha: Date; fechaISO: string; dia: string; hora: string }> = [];
+  // Generar próximos 14 días de slots disponibles (fuente de verdad compartida)
+  const slotsDisponibles: Array<{ fechaISO: string; dia: string; hora: string }> = [];
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -155,67 +128,31 @@ export default async function HorarioPage({ searchParams }: Props) {
   for (let i = 0; i < 14; i++) {
     const fechaBase = new Date(hoy);
     fechaBase.setDate(hoy.getDate() + i);
-
-    // Verificar si esta fecha está bloqueada
     const fechaBaseISO = fechaBase.toISOString().split('T')[0];
-    if (fechasBloqueadas.has(fechaBaseISO)) {
-      continue; // Saltar días bloqueados
-    }
 
-    const diaSemana = isoDow(fechaBase); // 1..7
+    const horasDisponibles = await getDisponibilidadProfesional({
+      clinicId,
+      profesionalId,
+      dateISO: fechaBaseISO,
+    });
 
-    const horariosDelDia = horarios.filter((h) => h.diaSemana === diaSemana);
+    for (const hora of horasDisponibles) {
+      const fechaSlot = new Date(`${fechaBaseISO}T${hora}:00-03:00`);
+      if (fechaSlot <= new Date()) continue;
 
-    for (const horario of horariosDelDia) {
-      const [horaInicio, minInicio] = horario.horaInicio.split(":").map(Number);
-      const [horaFin, minFin] = horario.horaFin.split(":").map(Number);
-      const intervalo = horario.intervaloMin || 45;
+      const dia = new Intl.DateTimeFormat("es-AR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }).format(fechaSlot);
 
-      let minutoActual = horaInicio * 60 + minInicio;
-      const minutoFin = horaFin * 60 + minFin;
-
-      while (minutoActual < minutoFin) {
-        const hh = Math.floor(minutoActual / 60);
-        const mm = minutoActual % 60;
-
-        const fechaSlot = new Date(fechaBase);
-        fechaSlot.setHours(hh, mm, 0, 0);
-
-        if (fechaSlot > new Date()) {
-          const diaStr = new Intl.DateTimeFormat("es-AR", {
-            weekday: "short",
-            day: "numeric",
-            month: "short",
-          }).format(fechaSlot);
-
-          const horaStr = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
-
-          slots.push({
-            fecha: fechaSlot,
-            fechaISO: fechaSlot.toISOString(),
-            dia: diaStr,
-            hora: horaStr,
-          });
-        }
-
-        minutoActual += intervalo;
-      }
+      slotsDisponibles.push({
+        fechaISO: fechaSlot.toISOString(),
+        dia,
+        hora,
+      });
     }
   }
-
-  // Turnos ya ocupados
-  const turnosExistentes = await prisma.turno.findMany({
-    where: {
-      profesionalId,
-      clinicId,
-      estado: { not: "CANCELADO" },
-      fecha: { in: slots.map((s) => s.fecha) },
-    },
-    select: { fecha: true },
-  });
-
-  const fechasOcupadas = new Set(turnosExistentes.map((t) => t.fecha.toISOString()));
-  const slotsDisponibles = slots.filter((s) => !fechasOcupadas.has(s.fechaISO));
 
   return (
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-[#eaf6fb] via-white to-[#f2f9fc] p-6 pt-20">

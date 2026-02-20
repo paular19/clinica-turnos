@@ -11,7 +11,6 @@ async function updateIntervalo() {
                 OR: [
                     { intervaloMin: 15 },
                     { intervaloMin: 60 },
-                    { intervaloMin: null },
                 ],
             },
             data: {

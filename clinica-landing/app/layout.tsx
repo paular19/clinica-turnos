@@ -2,7 +2,7 @@ import './styles/globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Clínica — Mater-like',
+  title: 'Clínica San Rafael',
   description: 'Atención de calidad para tu familia'
 };
 

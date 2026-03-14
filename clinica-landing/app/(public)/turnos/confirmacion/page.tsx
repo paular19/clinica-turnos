@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getPrisma } from "@/lib/db/prisma";
 const prisma = getPrisma();
 
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,7 @@ export default async function ConfirmacionPage({ searchParams }: Props) {
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: CLINIC_TZ,
     }).format(new Date(turno.fecha));
 
     return (

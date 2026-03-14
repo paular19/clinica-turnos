@@ -6,6 +6,8 @@ type Props = {
   pdfUrl?: string;
 };
 
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
+
 export default function ConfirmationEmail({ turno, paciente, pdfUrl }: Props) {
   const fechaFormateada = turno?.fecha
     ? new Intl.DateTimeFormat("es-AR", {
@@ -15,6 +17,7 @@ export default function ConfirmationEmail({ turno, paciente, pdfUrl }: Props) {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: CLINIC_TZ,
     }).format(new Date(turno.fecha))
     : "-";
 

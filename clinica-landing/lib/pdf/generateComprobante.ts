@@ -2,6 +2,8 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { getPrisma } from "@/lib/db/prisma";
 const prisma = getPrisma();
 
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
+
 
 export async function generateComprobantePDF(turnoId: string, clinicId?: string) {
   // fetch turno with relations
@@ -92,6 +94,7 @@ export async function generateComprobantePDF(turnoId: string, clinicId?: string)
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: CLINIC_TZ,
   }).format(new Date(turno.fecha));
 
   // Función helper para dibujar filas de información
@@ -217,7 +220,7 @@ export async function generateComprobantePDF(turnoId: string, clinicId?: string)
     color: rgb(0.5, 0.5, 0.5),
   });
 
-  page.drawText(`Generado el ${new Date().toLocaleDateString("es-AR")}`, {
+  page.drawText(`Generado el ${new Date().toLocaleDateString("es-AR", { timeZone: CLINIC_TZ })}`, {
     x: margin,
     y: 45,
     size: 9,

@@ -7,6 +7,8 @@ type Props = {
     motivo?: string;
 };
 
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
+
 const tiposConfig = {
     creacion: {
         titulo: "✓ Turno Confirmado",
@@ -43,6 +45,7 @@ export default function TurnoNotificationEmail({
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            timeZone: CLINIC_TZ,
         }).format(new Date(turno.fecha))
         : "-";
 

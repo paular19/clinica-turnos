@@ -1,12 +1,16 @@
 import { z } from "zod";
 import { isISODateTime } from "../utils/validators";
 
+const emailOpcionalSchema = z
+  .union([z.string().trim().email(), z.literal(""), z.undefined()])
+  .transform((value) => value || undefined);
+
 export const pacienteSchema = z.object({
   nombre: z.string().min(2),
   apellido: z.string().min(2),
   dni: z.string().min(6),
-  email: z.string().email(),
-  telefono: z.string().optional(),
+  email: emailOpcionalSchema,
+  telefono: z.string().trim().min(6),
   obraSocialId: z.union([z.string().uuid(), z.literal("").transform(() => undefined)]).optional()
 });
 
@@ -22,7 +26,8 @@ export const crearTurnoSchema = z.object({
 // Schema simple para solicitud de turno desde landing
 export const solicitudTurnoSchema = z.object({
   nombre: z.string().min(2, "El nombre es requerido"),
-  email: z.string().email("Email inválido"),
+  email: emailOpcionalSchema,
+  telefono: z.string().trim().min(6, "El telefono es requerido"),
   fecha: z.string().min(1, "La fecha es requerida"),
   hora: z.string().min(1, "La hora es requerida"),
   especialidad: z.string().min(1, "Selecciona una especialidad")

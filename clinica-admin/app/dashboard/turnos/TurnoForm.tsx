@@ -98,15 +98,31 @@ export default function TurnoForm({
 
     const handleCrearPaciente = async () => {
         setPacienteError('');
+        const nombre = nuevoPaciente.nombre.trim();
+        const apellido = nuevoPaciente.apellido.trim();
+        const dni = nuevoPaciente.dni.trim();
+        const email = nuevoPaciente.email.trim();
+        const telefono = nuevoPaciente.telefono.trim();
+
+        if (!nombre || !apellido || !dni || !telefono) {
+            setPacienteError('Completá nombre, apellido, DNI y telefono');
+            return;
+        }
+
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setPacienteError('El email no tiene un formato valido');
+            return;
+        }
+
         setIsCreatingPaciente(true);
 
         try {
             const pacienteCreado = await createPacienteParaTurno({
-                nombre: nuevoPaciente.nombre,
-                apellido: nuevoPaciente.apellido,
-                dni: nuevoPaciente.dni,
-                email: nuevoPaciente.email,
-                telefono: nuevoPaciente.telefono || undefined,
+                nombre,
+                apellido,
+                dni,
+                email: email || undefined,
+                telefono,
             });
 
             setPacientesList((prev) => ordenarPacientes([...prev, pacienteCreado]));
@@ -267,15 +283,16 @@ export default function TurnoForm({
                             />
                             <input
                                 type="email"
-                                placeholder="Email *"
+                                placeholder="Email (opcional)"
                                 value={nuevoPaciente.email}
                                 onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, email: e.target.value }))}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                         </div>
                         <input
-                            type="text"
-                            placeholder="Teléfono (opcional)"
+                            type="tel"
+                            placeholder="Telefono *"
+                            required
                             value={nuevoPaciente.telefono}
                             onChange={(e) => setNuevoPaciente((prev) => ({ ...prev, telefono: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

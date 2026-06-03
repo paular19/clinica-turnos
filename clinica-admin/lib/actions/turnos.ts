@@ -7,6 +7,7 @@ import { sendTurnoNotification } from '../email/sendTurnoNotification';
 import { getDisponibilidadProfesional } from '../queries/turnos';
 
 const CLINIC_TZ = 'America/Argentina/Buenos_Aires';
+const SYNTHETIC_EMAIL_DOMAIN = 'noemail.local';
 
 function toClinicDateISO(date: Date) {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -33,6 +34,21 @@ function toClinicHHMM(date: Date) {
     const hh = parts.find((p) => p.type === 'hour')?.value ?? '00';
     const mm = parts.find((p) => p.type === 'minute')?.value ?? '00';
     return `${hh}:${mm}`;
+}
+
+function normalizeEmail(value?: string) {
+    const trimmed = value?.trim().toLowerCase();
+    return trimmed ? trimmed : undefined;
+}
+
+function buildSyntheticEmail(dni: string, clinicId: string) {
+    const safeDni = dni.replace(/\D/g, '') || 'sin-dni';
+    const safeClinic = clinicId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 12) || 'clinic';
+    return `${safeDni}.${safeClinic}@${SYNTHETIC_EMAIL_DOMAIN}`;
+}
+
+function isRealPacienteEmail(email?: string | null) {
+    return !!email && !email.endsWith(`@${SYNTHETIC_EMAIL_DOMAIN}`);
 }
 
 export async function getTurnosByProfesional(profesionalId: string) {
@@ -104,7 +120,7 @@ export async function createTurno(data: {
     revalidatePath('/dashboard/turnos');
 
     // Enviar notificación de creación al paciente
-    if (turno.paciente?.email) {
+    if (isRealPacienteEmail(turno.paciente?.email)) {
         try {
             await sendTurnoNotification(
                 turno.paciente.email,
@@ -124,8 +140,8 @@ export async function createPacienteParaTurno(data: {
     nombre: string;
     apellido: string;
     dni: string;
-    email: string;
-    telefono?: string;
+    email?: string;
+    telefono: string;
 }) {
     const { userId } = await auth();
     if (!userId) throw new Error('No autorizado');
@@ -146,11 +162,11 @@ export async function createPacienteParaTurno(data: {
     const nombre = data.nombre.trim();
     const apellido = data.apellido.trim();
     const dni = data.dni.trim();
-    const email = data.email.trim().toLowerCase();
-    const telefono = data.telefono?.trim() || undefined;
+    const email = normalizeEmail(data.email);
+    const telefono = data.telefono.trim();
 
-    if (!nombre || !apellido || !dni || !email) {
-        throw new Error('Completá nombre, apellido, DNI y email');
+    if (!nombre || !apellido || !dni || !telefono) {
+        throw new Error('Completá nombre, apellido, DNI y telefono');
     }
 
     const existePorDni = await prisma.paciente.findFirst({
@@ -165,24 +181,28 @@ export async function createPacienteParaTurno(data: {
         throw new Error('Ya existe un paciente con ese DNI');
     }
 
-    const existePorEmail = await prisma.paciente.findFirst({
-        where: {
-            clinicId,
-            email,
-        },
-        select: { id: true },
-    });
+    if (email) {
+        const existePorEmail = await prisma.paciente.findFirst({
+            where: {
+                clinicId,
+                email,
+            },
+            select: { id: true },
+        });
 
-    if (existePorEmail) {
-        throw new Error('Ya existe un paciente con ese email');
+        if (existePorEmail) {
+            throw new Error('Ya existe un paciente con ese email');
+        }
     }
+
+    const emailFinal = email ?? buildSyntheticEmail(dni, clinicId);
 
     const paciente = await prisma.paciente.create({
         data: {
             nombre,
             apellido,
             dni,
-            email,
+            email: emailFinal,
             telefono,
             clinicId,
         },
@@ -384,7 +404,7 @@ export async function cancelarTurno(id: string, motivo?: string) {
     revalidatePath('/dashboard/turnos');
 
     // Enviar notificación de cancelación al paciente
-    if (turno.paciente?.email) {
+    if (isRealPacienteEmail(turno.paciente?.email)) {
         try {
             await sendTurnoNotification(
                 turno.paciente.email,
@@ -420,7 +440,7 @@ export async function confirmarTurno(id: string) {
     revalidatePath('/dashboard/turnos');
 
     // Enviar notificación de confirmación al paciente
-    if (turno.paciente?.email) {
+    if (isRealPacienteEmail(turno.paciente?.email)) {
         try {
             await sendTurnoNotification(
                 turno.paciente.email,

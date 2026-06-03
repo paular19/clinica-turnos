@@ -211,6 +211,9 @@ export default async function DashboardPage() {
                                         <div className="text-sm text-gray-500">
                                             DNI: {turno.paciente.dni}
                                         </div>
+                                        <div className="text-sm text-gray-500">
+                                            Tel: {turno.paciente.telefono || '-'}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {turno.profesional.nombre}

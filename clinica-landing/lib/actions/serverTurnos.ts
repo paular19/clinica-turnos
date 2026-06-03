@@ -264,10 +264,11 @@ export async function cancelarTurno(input: CancelarTurnoInput) {
     });
 
     // Enviar notificación de cancelación si encontramos el turno
-    if (isRealPacienteEmail(turnoAnterior?.paciente?.email)) {
+    const emailPaciente = turnoAnterior?.paciente?.email;
+    if (turnoAnterior && emailPaciente && isRealPacienteEmail(emailPaciente)) {
       try {
         await sendTurnoNotification(
-          turnoAnterior.paciente.email,
+          emailPaciente,
           turnoAnterior,
           turnoAnterior.paciente,
           "cancelacion",

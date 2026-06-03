@@ -29,6 +29,31 @@ interface SlotDisponible {
     hora: string;
 }
 
+const SLOT_WINDOW_DAYS = 30;
+
+function toISODateLocal(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function addDaysISO(isoDate: string, days: number) {
+    const base = new Date(`${isoDate}T00:00:00`);
+    base.setDate(base.getDate() + days);
+    return toISODateLocal(base);
+}
+
+function formatISODate(isoDate: string) {
+    const parsed = new Date(`${isoDate}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return isoDate;
+    return new Intl.DateTimeFormat('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(parsed);
+}
+
 export default function TurnoForm({
     profesionales,
     pacientes,
@@ -44,6 +69,7 @@ export default function TurnoForm({
     const [selectedPacienteId, setSelectedPacienteId] = useState('');
     const [selectedSlot, setSelectedSlot] = useState('');
     const [slotsDisponibles, setSlotsDisponibles] = useState<SlotDisponible[]>([]);
+    const [slotsDesde, setSlotsDesde] = useState(() => toISODateLocal(new Date()));
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [slotsError, setSlotsError] = useState('');
     const [pacientesList, setPacientesList] = useState<Paciente[]>(pacientes);
@@ -58,6 +84,9 @@ export default function TurnoForm({
         email: '',
         telefono: '',
     });
+    const hoyISO = toISODateLocal(new Date());
+    const puedeRetrocederRango = slotsDesde > hoyISO;
+    const rangoHasta = addDaysISO(slotsDesde, SLOT_WINDOW_DAYS - 1);
 
     const ordenarPacientes = (lista: Paciente[]) => {
         return [...lista].sort((a, b) => {
@@ -164,6 +193,8 @@ export default function TurnoForm({
             try {
                 const slots = await getProximosSlotsParaTurno({
                     profesionalId: selectedProfesional,
+                    dias: SLOT_WINDOW_DAYS,
+                    desde: slotsDesde,
                 });
                 setSlotsDisponibles(slots);
             } catch (error: any) {
@@ -175,7 +206,7 @@ export default function TurnoForm({
         };
 
         cargarSlots();
-    }, [selectedProfesional]);
+    }, [selectedProfesional, slotsDesde]);
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -322,6 +353,35 @@ export default function TurnoForm({
                     Día y horario disponible *
                 </label>
 
+                {selectedProfesional && (
+                    <div className="mb-3 p-3 border border-gray-200 rounded-lg bg-gray-50 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm text-gray-600">
+                            Mostrando del {formatISODate(slotsDesde)} al {formatISODate(rangoHasta)}
+                        </p>
+                        <div className="flex gap-2">
+                            {puedeRetrocederRango && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const candidato = addDaysISO(slotsDesde, -SLOT_WINDOW_DAYS);
+                                        setSlotsDesde(candidato < hoyISO ? hoyISO : candidato);
+                                    }}
+                                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-white"
+                                >
+                                    30 días anteriores
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setSlotsDesde(addDaysISO(slotsDesde, SLOT_WINDOW_DAYS))}
+                                className="px-3 py-2 text-sm border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50"
+                            >
+                                Próximos 30 días
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {!selectedProfesional ? (
                     <p className="text-sm text-gray-500">Primero seleccioná un profesional</p>
                 ) : isLoadingSlots ? (
@@ -329,7 +389,7 @@ export default function TurnoForm({
                 ) : slotsError ? (
                     <p className="text-sm text-red-600">{slotsError}</p>
                 ) : slotsDisponibles.length === 0 ? (
-                    <p className="text-sm text-amber-700">No hay turnos disponibles en los próximos 14 días para este profesional.</p>
+                    <p className="text-sm text-amber-700">No hay turnos disponibles en el rango seleccionado para este profesional.</p>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border border-gray-200 rounded-lg">
                         {slotsDisponibles.map((slot) => (

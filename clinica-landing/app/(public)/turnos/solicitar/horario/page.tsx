@@ -11,6 +11,21 @@ interface Props {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
+const SLOT_WINDOW_DAYS = 30;
+
+function toISODateLocal(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseISODateOrNull(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /**
  * Paso 4: Selección de fecha y hora
  */
@@ -83,6 +98,7 @@ export default async function HorarioPage({ searchParams }: Props) {
   const obraSocialId = ((Array.isArray(sp.obraSocialId) ? sp.obraSocialId[0] : sp.obraSocialId) || "").toString().trim();
   const especialidadId = ((Array.isArray(sp.especialidadId) ? sp.especialidadId[0] : sp.especialidadId) || "").toString().trim();
   const profesionalId = ((Array.isArray(sp.profesionalId) ? sp.profesionalId[0] : sp.profesionalId) || "").toString().trim();
+  const desdeParam = ((Array.isArray(sp.desde) ? sp.desde[0] : sp.desde) || "").toString().trim();
 
   if (!nombre || !email || !dni || !obraSocialId || !especialidadId || !profesionalId) {
     return (
@@ -119,22 +135,78 @@ export default async function HorarioPage({ searchParams }: Props) {
 
   const clinicId = profesional.clinicId;
 
-  // Generar próximos 14 días de slots disponibles (fuente de verdad compartida)
-  const slotsDisponibles: Array<{ fechaISO: string; dia: string; hora: string }> = [];
-
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < 14; i++) {
-    const fechaBase = new Date(hoy);
-    fechaBase.setDate(hoy.getDate() + i);
-    const fechaBaseISO = fechaBase.toISOString().split('T')[0];
+  const fechaDesdeParam = parseISODateOrNull(desdeParam);
+  const fechaInicio = fechaDesdeParam && fechaDesdeParam >= hoy ? fechaDesdeParam : new Date(hoy);
+  const fechaFin = new Date(fechaInicio);
+  fechaFin.setDate(fechaInicio.getDate() + SLOT_WINDOW_DAYS - 1);
 
-    const horasDisponibles = await getDisponibilidadProfesional({
-      clinicId,
-      profesionalId,
-      dateISO: fechaBaseISO,
+  const queryBase = {
+    nombre,
+    email,
+    dni,
+    obraSocialId,
+    especialidadId,
+    profesionalId,
+  };
+
+  const buildHorarioHref = (desde: Date) => {
+    const params = new URLSearchParams({
+      ...queryBase,
+      desde: toISODateLocal(desde),
     });
+    return `/turnos/solicitar/horario?${params.toString()}`;
+  };
+
+  const buildProfesionalesHref = () => {
+    const params = new URLSearchParams({
+      nombre,
+      email,
+      dni,
+      obraSocialId,
+      especialidadId,
+    });
+    return `/turnos/solicitar/profesionales?${params.toString()}`;
+  };
+
+  const fechaAnteriorInicio = new Date(fechaInicio);
+  fechaAnteriorInicio.setDate(fechaInicio.getDate() - SLOT_WINDOW_DAYS);
+  const puedeIrRangoAnterior = fechaAnteriorInicio >= hoy;
+
+  const fechaSiguienteInicio = new Date(fechaInicio);
+  fechaSiguienteInicio.setDate(fechaInicio.getDate() + SLOT_WINDOW_DAYS);
+
+  const formatearRango = new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  // Generar slots disponibles en ventana navegable (sin límite hacia adelante)
+  const slotsDisponibles: Array<{ fechaISO: string; dia: string; hora: string }> = [];
+
+  const fechasVentana = Array.from({ length: SLOT_WINDOW_DAYS }, (_, i) => {
+    const fechaBase = new Date(fechaInicio);
+    fechaBase.setDate(fechaInicio.getDate() + i);
+    return fechaBase;
+  });
+
+  const disponibilidadPorDia = await Promise.all(
+    fechasVentana.map(async (fechaBase) => {
+      const fechaBaseISO = toISODateLocal(fechaBase);
+      const horasDisponibles = await getDisponibilidadProfesional({
+        clinicId,
+        profesionalId,
+        dateISO: fechaBaseISO,
+      });
+
+      return { fechaBaseISO, horasDisponibles };
+    })
+  );
+
+  for (const { fechaBaseISO, horasDisponibles } of disponibilidadPorDia) {
 
     for (const hora of horasDisponibles) {
       const fechaSlot = new Date(`${fechaBaseISO}T${hora}:00-03:00`);
@@ -172,19 +244,35 @@ export default async function HorarioPage({ searchParams }: Props) {
           <strong>DNI:</strong> {dni}
         </p>
 
+        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <p className="text-sm text-slate-700 mb-3">
+            Mostrando disponibilidad del {formatearRango.format(fechaInicio)} al {formatearRango.format(fechaFin)}.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {puedeIrRangoAnterior && (
+              <Link
+                href={buildHorarioHref(fechaAnteriorInicio)}
+                className="px-3 py-2 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-white"
+              >
+                Ver 30 días anteriores
+              </Link>
+            )}
+            <Link
+              href={buildHorarioHref(fechaSiguienteInicio)}
+              className="px-3 py-2 text-sm rounded-lg border border-[#4bbde3] text-[#2b8fb8] hover:bg-[#f0f9fc]"
+            >
+              Ver próximos 30 días
+            </Link>
+          </div>
+        </div>
+
         {slotsDisponibles.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-slate-600 mb-4">
-              No hay turnos disponibles en los próximos 14 días para este profesional.
+              No hay turnos disponibles para este profesional en el rango seleccionado.
             </p>
             <Link
-              href={`/turnos/solicitar/profesionales?nombre=${encodeURIComponent(
-                nombre
-              )}&email=${encodeURIComponent(email)}&dni=${encodeURIComponent(
-                dni
-              )}&obraSocialId=${encodeURIComponent(
-                obraSocialId
-              )}&especialidadId=${encodeURIComponent(especialidadId)}`}
+              href={buildProfesionalesHref()}
               className="text-[#4bbde3] hover:underline"
             >
               Elegir otro profesional

@@ -245,6 +245,7 @@ export async function getDisponibilidadParaTurno(data: {
 export async function getProximosSlotsParaTurno(data: {
     profesionalId: string;
     dias?: number;
+    desde?: string;
 }) {
     const { userId } = await auth();
     if (!userId) throw new Error('No autorizado');
@@ -264,18 +265,26 @@ export async function getProximosSlotsParaTurno(data: {
 
     if (!data.profesionalId) return [];
 
-    const totalDias = data.dias && data.dias > 0 ? data.dias : 14;
+    const totalDias = data.dias && data.dias > 0 ? data.dias : 30;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+
+    let fechaInicio = new Date(hoy);
+    if (data.desde) {
+        const parsedDesde = new Date(`${data.desde}T00:00:00`);
+        if (!Number.isNaN(parsedDesde.getTime()) && parsedDesde >= hoy) {
+            fechaInicio = parsedDesde;
+        }
+    }
 
     const ahora = new Date();
     const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
     const hoyISO = hoy.toISOString().split('T')[0];
 
-    const ultimoDia = new Date(hoy);
-    ultimoDia.setDate(hoy.getDate() + totalDias - 1);
+    const ultimoDia = new Date(fechaInicio);
+    ultimoDia.setDate(fechaInicio.getDate() + totalDias - 1);
 
-    const rangeStart = new Date(`${hoyISO}T00:00:00-03:00`);
+    const rangeStart = new Date(`${fechaInicio.toISOString().split('T')[0]}T00:00:00-03:00`);
     const rangeEnd = new Date(`${ultimoDia.toISOString().split('T')[0]}T23:59:59.999-03:00`);
 
     const turnosExistentes = await prisma.turno.findMany({
@@ -302,16 +311,25 @@ export async function getProximosSlotsParaTurno(data: {
 
     const slots: Array<{ fecha: string; dia: string; hora: string }> = [];
 
-    for (let i = 0; i < totalDias; i++) {
-        const fechaBase = new Date(hoy);
-        fechaBase.setDate(hoy.getDate() + i);
-        const fechaISO = fechaBase.toISOString().split('T')[0];
+    const fechasVentana = Array.from({ length: totalDias }, (_, i) => {
+        const fechaBase = new Date(fechaInicio);
+        fechaBase.setDate(fechaInicio.getDate() + i);
+        return fechaBase;
+    });
 
-        const horas = await getDisponibilidadProfesional({
-            clinicId,
-            profesionalId: data.profesionalId,
-            dateISO: fechaISO,
-        });
+    const disponibilidadPorDia = await Promise.all(
+        fechasVentana.map(async (fechaBase) => {
+            const fechaISO = fechaBase.toISOString().split('T')[0];
+            const horas = await getDisponibilidadProfesional({
+                clinicId,
+                profesionalId: data.profesionalId,
+                dateISO: fechaISO,
+            });
+            return { fechaBase, fechaISO, horas };
+        })
+    );
+
+    for (const { fechaBase, fechaISO, horas } of disponibilidadPorDia) {
 
         const horasOcupadas = ocupadosPorDia.get(fechaISO) ?? new Set<string>();
 

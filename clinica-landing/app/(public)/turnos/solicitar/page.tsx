@@ -14,19 +14,20 @@ async function handleSubmit(formData: FormData) {
 
   const nombre = (formData.get("nombre") || "").toString().trim();
   const email = (formData.get("email") || "").toString().trim();
+  const telefono = (formData.get("telefono") || "").toString().trim();
   const dni = (formData.get("dni") || "").toString().trim();
   const obraSocialId = (formData.get("obraSocialId") || "").toString();
 
-  if (!nombre || !email || !dni || !obraSocialId) {
+  if (!nombre || !telefono || !dni || !obraSocialId) {
     return { success: false, message: "Todos los campos son requeridos" };
   }
 
-  const params = new URLSearchParams({
-    nombre,
-    email,
-    dni,
-    obraSocialId,
-  });
+  if (email && !email.includes("@")) {
+    return { success: false, message: "Email inválido" };
+  }
+
+  const params = new URLSearchParams({ nombre, telefono, dni, obraSocialId });
+  if (email) params.set("email", email);
 
   redirect(`/turnos/solicitar/especialidad?${params.toString()}`);
 }
@@ -78,15 +79,32 @@ export default async function SolicitarTurnoPage() {
               htmlFor="email"
               className="block text-sm font-medium text-slate-700 mb-2"
             >
-              Email
+              Email (opcional)
             </label>
             <input
               id="email"
               name="email"
               type="email"
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#4bbde3] focus:border-transparent outline-none transition"
+              placeholder="tu@email.com (opcional)"
+            />
+          </div>
+
+          {/* Telefono */}
+          <div>
+            <label
+              htmlFor="telefono"
+              className="block text-sm font-medium text-slate-700 mb-2"
+            >
+              Telefono
+            </label>
+            <input
+              id="telefono"
+              name="telefono"
+              type="tel"
               required
               className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#4bbde3] focus:border-transparent outline-none transition"
-              placeholder="tu@email.com"
+              placeholder="11 5555 5555"
             />
           </div>
 

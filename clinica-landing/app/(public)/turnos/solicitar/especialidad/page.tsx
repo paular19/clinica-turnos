@@ -12,21 +12,17 @@ async function handleSelect(formData: FormData) {
 
   const nombre = (formData.get("nombre") || "").toString();
   const email = (formData.get("email") || "").toString();
+  const telefono = (formData.get("telefono") || "").toString();
   const dni = (formData.get("dni") || "").toString();
   const obraSocialId = (formData.get("obraSocialId") || "").toString();
   const especialidadId = (formData.get("especialidadId") || "").toString();
 
-  if (!nombre || !email || !dni || !obraSocialId || !especialidadId) {
+  if (!nombre || !telefono || !dni || !obraSocialId || !especialidadId) {
     return { success: false, message: "Datos incompletos" };
   }
 
-  const params = new URLSearchParams({
-    nombre,
-    email,
-    dni,
-    obraSocialId,
-    especialidadId,
-  });
+  const params = new URLSearchParams({ nombre, telefono, dni, obraSocialId, especialidadId });
+  if (email) params.set("email", email);
 
   redirect(`/turnos/solicitar/profesionales?${params.toString()}`);
 }
@@ -36,12 +32,13 @@ export default async function EspecialidadPage({ searchParams }: Props) {
 
   const nombre = Array.isArray(sp.nombre) ? sp.nombre[0] : sp.nombre || "";
   const email = Array.isArray(sp.email) ? sp.email[0] : sp.email || "";
+  const telefono = Array.isArray(sp.telefono) ? sp.telefono[0] : sp.telefono || "";
   const dni = Array.isArray(sp.dni) ? sp.dni[0] : sp.dni || "";
   const obraSocialId = Array.isArray(sp.obraSocialId)
     ? sp.obraSocialId[0]
     : sp.obraSocialId || "";
 
-  if (!nombre || !email || !dni || !obraSocialId) return notFound();
+  if (!nombre || !telefono || !dni || !obraSocialId) return notFound();
 
   const especialidades = await listEspecialidadesPorObraSocial(obraSocialId);
 
@@ -63,6 +60,7 @@ export default async function EspecialidadPage({ searchParams }: Props) {
         <form action={handleSelect} className="space-y-4">
           <input type="hidden" name="nombre" value={nombre} />
           <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="telefono" value={telefono} />
           <input type="hidden" name="dni" value={dni} />
           <input type="hidden" name="obraSocialId" value={obraSocialId} />
 

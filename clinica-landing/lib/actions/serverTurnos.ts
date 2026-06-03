@@ -17,6 +17,7 @@ import { generateComprobantePDF } from "../pdf/generateComprobante";
 import { z } from "zod";
 import { getPrisma } from "@/lib/db/prisma";
 const prisma = getPrisma();
+const SYNTHETIC_EMAIL_DOMAIN = "noemail.local";
 
 
 /* ---------------------------- Helpers ---------------------------- */
@@ -55,6 +56,16 @@ function getClinicDateParts(date: Date) {
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
+}
+
+function buildSyntheticEmail(dni: string, clinicId: string) {
+  const safeDni = dni.replace(/\D/g, "") || "sin-dni";
+  const safeClinic = clinicId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().slice(0, 12) || "clinic";
+  return `${safeDni}.${safeClinic}@${SYNTHETIC_EMAIL_DOMAIN}`;
+}
+
+function isRealPacienteEmail(email?: string | null) {
+  return !!email && !email.endsWith(`@${SYNTHETIC_EMAIL_DOMAIN}`);
 }
 
 async function validarSlotYCompatibilidad(tx: any, params: {
@@ -140,7 +151,12 @@ export async function crearTurno(data: CrearTurnoInput) {
 
     parsed.paciente.nombre = sanitizeString(parsed.paciente.nombre);
     parsed.paciente.apellido = sanitizeString(parsed.paciente.apellido);
-    parsed.paciente.email = sanitizeString(parsed.paciente.email);
+    if (parsed.paciente.email) {
+      parsed.paciente.email = sanitizeString(parsed.paciente.email).toLowerCase();
+    }
+    parsed.paciente.telefono = sanitizeString(parsed.paciente.telefono);
+
+    const emailParaCrear = parsed.paciente.email || buildSyntheticEmail(parsed.paciente.dni, parsed.clinicId);
 
     const fecha = parseISO(parsed.fecha);
 
@@ -158,16 +174,16 @@ export async function crearTurno(data: CrearTurnoInput) {
         update: {
           nombre: parsed.paciente.nombre,
           apellido: parsed.paciente.apellido,
-          email: parsed.paciente.email,
-          telefono: parsed.paciente.telefono || undefined,
+          email: parsed.paciente.email || undefined,
+          telefono: parsed.paciente.telefono,
           obraSocialId: parsed.paciente.obraSocialId || undefined,
         },
         create: {
           nombre: parsed.paciente.nombre,
           apellido: parsed.paciente.apellido,
           dni: parsed.paciente.dni,
-          email: parsed.paciente.email,
-          telefono: parsed.paciente.telefono || undefined,
+          email: emailParaCrear,
+          telefono: parsed.paciente.telefono,
           obraSocialId: parsed.paciente.obraSocialId || undefined,
           clinicId: parsed.clinicId,
         },
@@ -201,7 +217,7 @@ export async function crearTurno(data: CrearTurnoInput) {
         include: { profesional: true, especialidad: true, paciente: true },
       });
 
-      if (turnoFull) {
+      if (turnoFull && isRealPacienteEmail(turnoFull.paciente.email)) {
         await sendTurnoNotification(
           turnoFull.paciente.email,
           turnoFull,
@@ -248,7 +264,7 @@ export async function cancelarTurno(input: CancelarTurnoInput) {
     });
 
     // Enviar notificación de cancelación si encontramos el turno
-    if (turnoAnterior?.paciente?.email) {
+    if (isRealPacienteEmail(turnoAnterior?.paciente?.email)) {
       try {
         await sendTurnoNotification(
           turnoAnterior.paciente.email,
@@ -331,7 +347,7 @@ export async function reprogramarTurno(input: ReprogramTurnoInput) {
         include: { paciente: true, profesional: true, especialidad: true },
       });
 
-      if (turnoFull) {
+      if (turnoFull && isRealPacienteEmail(turnoFull.paciente.email)) {
         // Enviar notificación de reprogramación
         await sendTurnoNotification(
           turnoFull.paciente.email,
@@ -425,7 +441,7 @@ export async function solicitudTurnoPublica(formData: FormData) {
     const dni = formData.get("dni") as string;
     const nombre = formData.get("nombre") as string;
     const apellido = (formData.get("apellido") as string) || "";
-    const email = formData.get("email") as string;
+    const email = ((formData.get("email") as string) || "").trim();
     const telefono = (formData.get("telefono") as string) || "";
 
     if (!clinicId) throw new Error("Clinic requerida");
@@ -435,7 +451,8 @@ export async function solicitudTurnoPublica(formData: FormData) {
     if (!fecha || !hora) throw new Error("Fecha/hora requerida");
     if (!dni) throw new Error("DNI requerido");
     if (!nombre || nombre.length < 2) throw new Error("Nombre inválido");
-    if (!email || !email.includes("@")) throw new Error("Email inválido");
+    if (!telefono.trim()) throw new Error("Telefono requerido");
+    if (email && !email.includes("@")) throw new Error("Email inválido");
 
     const fechaISO = `${fecha}T${hora}`;
     const fechaHora = new Date(fechaISO);
@@ -451,7 +468,7 @@ export async function solicitudTurnoPublica(formData: FormData) {
         dni,
         nombre,
         apellido,
-        email,
+        email: email || undefined,
         telefono,
         obraSocialId,
       },

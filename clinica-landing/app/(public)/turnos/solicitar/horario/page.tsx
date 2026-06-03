@@ -37,6 +37,7 @@ async function handleSubmitTurno(formData: FormData) {
   try {
     const nombre = ((formData.get("nombre") as string) || "").trim();
     const email = ((formData.get("email") as string) || "").trim();
+    const telefono = ((formData.get("telefono") as string) || "").trim();
     const dni = ((formData.get("dni") as string) || "").trim();
     const obraSocialId = ((formData.get("obraSocialId") as string) || "").trim();
     const especialidadId = ((formData.get("especialidadId") as string) || "").trim();
@@ -44,9 +45,10 @@ async function handleSubmitTurno(formData: FormData) {
     const fechaHoraISO = ((formData.get("fechaHora") as string) || "").trim();
 
     if (dni.length < 6) throw new Error("DNI inválido (mínimo 6 dígitos).");
-    if (!profesionalId || !especialidadId || !obraSocialId || !fechaHoraISO) {
+    if (!telefono || !profesionalId || !especialidadId || !obraSocialId || !fechaHoraISO) {
       throw new Error("Faltan datos requeridos. Volvé a comenzar el proceso.");
     }
+    if (email && !email.includes("@")) throw new Error("Email inválido.");
 
     // Validar fecha ISO
     const fechaDate = new Date(fechaHoraISO);
@@ -74,8 +76,8 @@ async function handleSubmitTurno(formData: FormData) {
         nombre: primerNombre,
         apellido,
         dni,
-        email,
-        telefono: undefined,
+        email: email || undefined,
+        telefono,
         obraSocialId: obraSocialId && obraSocialId.length > 0 ? obraSocialId : undefined,
       },
     };
@@ -94,13 +96,14 @@ export default async function HorarioPage({ searchParams }: Props) {
 
   const nombre = ((Array.isArray(sp.nombre) ? sp.nombre[0] : sp.nombre) || "").toString().trim();
   const email = ((Array.isArray(sp.email) ? sp.email[0] : sp.email) || "").toString().trim();
+  const telefono = ((Array.isArray(sp.telefono) ? sp.telefono[0] : sp.telefono) || "").toString().trim();
   const dni = ((Array.isArray(sp.dni) ? sp.dni[0] : sp.dni) || "").toString().trim();
   const obraSocialId = ((Array.isArray(sp.obraSocialId) ? sp.obraSocialId[0] : sp.obraSocialId) || "").toString().trim();
   const especialidadId = ((Array.isArray(sp.especialidadId) ? sp.especialidadId[0] : sp.especialidadId) || "").toString().trim();
   const profesionalId = ((Array.isArray(sp.profesionalId) ? sp.profesionalId[0] : sp.profesionalId) || "").toString().trim();
   const desdeParam = ((Array.isArray(sp.desde) ? sp.desde[0] : sp.desde) || "").toString().trim();
 
-  if (!nombre || !email || !dni || !obraSocialId || !especialidadId || !profesionalId) {
+  if (!nombre || !telefono || !dni || !obraSocialId || !especialidadId || !profesionalId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
         <div className="text-center">
@@ -145,7 +148,7 @@ export default async function HorarioPage({ searchParams }: Props) {
 
   const queryBase = {
     nombre,
-    email,
+    telefono,
     dni,
     obraSocialId,
     especialidadId,
@@ -153,21 +156,14 @@ export default async function HorarioPage({ searchParams }: Props) {
   };
 
   const buildHorarioHref = (desde: Date) => {
-    const params = new URLSearchParams({
-      ...queryBase,
-      desde: toISODateLocal(desde),
-    });
+    const params = new URLSearchParams({ ...queryBase, desde: toISODateLocal(desde) });
+    if (email) params.set("email", email);
     return `/turnos/solicitar/horario?${params.toString()}`;
   };
 
   const buildProfesionalesHref = () => {
-    const params = new URLSearchParams({
-      nombre,
-      email,
-      dni,
-      obraSocialId,
-      especialidadId,
-    });
+    const params = new URLSearchParams({ nombre, telefono, dni, obraSocialId, especialidadId });
+    if (email) params.set("email", email);
     return `/turnos/solicitar/profesionales?${params.toString()}`;
   };
 
@@ -239,7 +235,13 @@ export default async function HorarioPage({ searchParams }: Props) {
         <p className="text-sm text-slate-600 mb-6">
           <strong>Paciente:</strong> {nombre}
           <br />
-          <strong>Email:</strong> {email}
+          <strong>Telefono:</strong> {telefono}
+          {email ? (
+            <>
+              <br />
+              <strong>Email:</strong> {email}
+            </>
+          ) : null}
           <br />
           <strong>DNI:</strong> {dni}
         </p>
@@ -282,6 +284,7 @@ export default async function HorarioPage({ searchParams }: Props) {
           <form action={handleSubmitTurno} className="space-y-4">
             <input type="hidden" name="nombre" value={nombre} />
             <input type="hidden" name="email" value={email} />
+            <input type="hidden" name="telefono" value={telefono} />
             <input type="hidden" name="dni" value={dni} />
             <input type="hidden" name="obraSocialId" value={obraSocialId} />
             <input type="hidden" name="especialidadId" value={especialidadId} />

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { isISODateTime } from "../utils/validators";
 
+const emailOpcionalSchema = z
+  .union([z.string().trim().email(), z.literal(""), z.undefined()])
+  .transform((value) => value || undefined);
+
 /**
  * Soporta IDs generados por Prisma en dos formatos comunes:
  * - UUID (String @db.Uuid)
@@ -13,8 +17,8 @@ export const pacienteSchema = z.object({
   // Permitimos apellidos de 1 carácter para no bloquear turnos
   apellido: z.string().min(1),
   dni: z.string().min(6),
-  email: z.string().email(),
-  telefono: z.string().optional().nullable().transform(val => val || undefined),
+  email: emailOpcionalSchema,
+  telefono: z.string().trim().min(6),
 
   // Permite: UUID/CUID, o "" (lo transforma a undefined), o null/undefined
   obraSocialId: z
@@ -41,7 +45,8 @@ export const crearTurnoSchema = z.object({
 // Schema simple para solicitud de turno desde landing
 export const solicitudTurnoSchema = z.object({
   nombre: z.string().min(2, "El nombre es requerido"),
-  email: z.string().email("Email inválido"),
+  email: emailOpcionalSchema,
+  telefono: z.string().trim().min(6, "El telefono es requerido"),
   fecha: z.string().min(1, "La fecha es requerida"),
   hora: z.string().min(1, "La hora es requerida"),
   especialidad: z.string().min(1, "Selecciona una especialidad"),

@@ -7,6 +7,14 @@ import { crearProfesionalSchema, crearEspecialidadSchema, registrarPacienteSchem
 import { z } from "zod";
 import { sanitizeString } from "../utils/sanitize";
 
+const SYNTHETIC_EMAIL_DOMAIN = "noemail.local";
+
+function buildSyntheticEmail(dni: string, clinicId: string) {
+  const safeDni = dni.replace(/\D/g, "") || "sin-dni";
+  const safeClinic = clinicId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().slice(0, 12) || "clinic";
+  return `${safeDni}.${safeClinic}@${SYNTHETIC_EMAIL_DOMAIN}`;
+}
+
 export async function crearProfesional(input: any) {
   try {
     const parsed = crearProfesionalSchema.parse(input);
@@ -85,21 +93,25 @@ export async function crearEspecialidad(input: any) {
 export async function registrarPaciente(input: any) {
   try {
     const parsed = registrarPacienteSchema.parse(input);
+    const emailNormalizado = parsed.email ? sanitizeString(parsed.email).toLowerCase() : undefined;
+    const telefonoNormalizado = sanitizeString(parsed.telefono);
+    const emailParaCrear = emailNormalizado || buildSyntheticEmail(parsed.dni, parsed.clinicId);
+
     const paciente = await prisma.paciente.upsert({
       where: { dni_clinicId: { dni: parsed.dni, clinicId: parsed.clinicId } },
       update: {
         nombre: sanitizeString(parsed.nombre),
         apellido: sanitizeString(parsed.apellido),
-        email: parsed.email,
-        telefono: parsed.telefono || undefined,
+        email: emailNormalizado || undefined,
+        telefono: telefonoNormalizado,
         obraSocialId: parsed.obraSocialId || undefined
       },
       create: {
         nombre: sanitizeString(parsed.nombre),
         apellido: sanitizeString(parsed.apellido),
         dni: parsed.dni,
-        email: parsed.email,
-        telefono: parsed.telefono || undefined,
+        email: emailParaCrear,
+        telefono: telefonoNormalizado,
         obraSocialId: parsed.obraSocialId || undefined,
         clinicId: parsed.clinicId
       }

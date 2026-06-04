@@ -5,15 +5,20 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import DeleteHorarioButton from './DeleteHorarioButton';
 
-const DIAS_SEMANA = [
-    'Domingo',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-];
+const DIAS_SEMANA_LABEL: Record<number, string> = {
+    0: 'Domingo',
+    1: 'Lunes',
+    2: 'Martes',
+    3: 'Miércoles',
+    4: 'Jueves',
+    5: 'Viernes',
+    6: 'Sábado',
+    7: 'Domingo',
+};
+
+function getDiaSemanaLabel(diaSemana: number) {
+    return DIAS_SEMANA_LABEL[diaSemana] ?? `Día ${diaSemana}`;
+}
 
 export default async function HorariosPage() {
     const { userId } = await auth();
@@ -127,7 +132,7 @@ export default async function HorariosPage() {
                                         >
                                             <div className="flex justify-between items-start mb-3">
                                                 <h3 className="font-semibold text-gray-900">
-                                                    {DIAS_SEMANA[horario.diaSemana]}
+                                                    {getDiaSemanaLabel(horario.diaSemana)}
                                                 </h3>
                                                 <div className="flex gap-2">
                                                     <Link

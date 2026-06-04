@@ -307,6 +307,11 @@ export async function desvincularObraSocial(
 
 // HORARIOS
 
+function normalizeDiaSemana(diaSemana: number) {
+    if (diaSemana === 0) return 7;
+    return diaSemana;
+}
+
 export async function createHorario(data: {
     profesionalId: string;
     diaSemana: number;
@@ -330,10 +335,15 @@ export async function createHorario(data: {
         clinicId = firstClinic.id;
     }
 
+    const diaSemana = normalizeDiaSemana(data.diaSemana);
+    if (!Number.isInteger(diaSemana) || diaSemana < 1 || diaSemana > 7) {
+        throw new Error('Día de semana inválido. Debe estar entre 1 (Lunes) y 7 (Domingo).');
+    }
+
     const horario = await prisma.horario.create({
         data: {
             profesionalId: data.profesionalId,
-            diaSemana: data.diaSemana,
+            diaSemana,
             horaInicio: data.horaInicio,
             horaFin: data.horaFin,
             intervaloMin: data.intervaloMin,
@@ -357,10 +367,15 @@ export async function updateHorario(
     const { userId } = await auth();
     if (!userId) throw new Error('No autorizado');
 
+    const diaSemana = normalizeDiaSemana(data.diaSemana);
+    if (!Number.isInteger(diaSemana) || diaSemana < 1 || diaSemana > 7) {
+        throw new Error('Día de semana inválido. Debe estar entre 1 (Lunes) y 7 (Domingo).');
+    }
+
     const horario = await prisma.horario.update({
         where: { id },
         data: {
-            diaSemana: data.diaSemana,
+            diaSemana,
             horaInicio: data.horaInicio,
             horaFin: data.horaFin,
             intervaloMin: data.intervaloMin,

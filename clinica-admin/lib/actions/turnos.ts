@@ -36,6 +36,17 @@ function toClinicHHMM(date: Date) {
     return `${hh}:${mm}`;
 }
 
+function toMinutes(hhmm: string) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+}
+
+function addDaysISO(isoDate: string, days: number) {
+    const base = new Date(`${isoDate}T12:00:00Z`);
+    base.setUTCDate(base.getUTCDate() + days);
+    return base.toISOString().split('T')[0];
+}
+
 function normalizeEmail(value?: string) {
     const trimmed = value?.trim().toLowerCase();
     return trimmed ? trimmed : undefined;
@@ -248,13 +259,13 @@ export async function getDisponibilidadParaTurno(data: {
         dateISO: data.fecha,
     });
 
-    const hoyISO = new Date().toISOString().split('T')[0];
+    const ahora = new Date();
+    const hoyISO = toClinicDateISO(ahora);
     if (data.fecha !== hoyISO) {
         return slots;
     }
 
-    const ahora = new Date();
-    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
+    const minutosAhora = toMinutes(toClinicHHMM(ahora));
 
     return slots.filter((hhmm) => {
         const [h, m] = hhmm.split(':').map(Number);
@@ -286,26 +297,19 @@ export async function getProximosSlotsParaTurno(data: {
     if (!data.profesionalId) return [];
 
     const totalDias = data.dias && data.dias > 0 ? data.dias : 30;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const ahora = new Date();
+    const hoyISO = toClinicDateISO(ahora);
+    const minutosAhora = toMinutes(toClinicHHMM(ahora));
 
-    let fechaInicio = new Date(hoy);
-    if (data.desde) {
-        const parsedDesde = new Date(`${data.desde}T00:00:00`);
-        if (!Number.isNaN(parsedDesde.getTime()) && parsedDesde >= hoy) {
-            fechaInicio = parsedDesde;
-        }
+    let fechaInicioISO = hoyISO;
+    if (data.desde && /^\d{4}-\d{2}-\d{2}$/.test(data.desde) && data.desde >= hoyISO) {
+        fechaInicioISO = data.desde;
     }
 
-    const ahora = new Date();
-    const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
-    const hoyISO = hoy.toISOString().split('T')[0];
+    const fechaFinISO = addDaysISO(fechaInicioISO, totalDias - 1);
 
-    const ultimoDia = new Date(fechaInicio);
-    ultimoDia.setDate(fechaInicio.getDate() + totalDias - 1);
-
-    const rangeStart = new Date(`${fechaInicio.toISOString().split('T')[0]}T00:00:00-03:00`);
-    const rangeEnd = new Date(`${ultimoDia.toISOString().split('T')[0]}T23:59:59.999-03:00`);
+    const rangeStart = new Date(`${fechaInicioISO}T00:00:00-03:00`);
+    const rangeEnd = new Date(`${fechaFinISO}T23:59:59.999-03:00`);
 
     const turnosExistentes = await prisma.turno.findMany({
         where: {
@@ -331,25 +335,20 @@ export async function getProximosSlotsParaTurno(data: {
 
     const slots: Array<{ fecha: string; dia: string; hora: string }> = [];
 
-    const fechasVentana = Array.from({ length: totalDias }, (_, i) => {
-        const fechaBase = new Date(fechaInicio);
-        fechaBase.setDate(fechaInicio.getDate() + i);
-        return fechaBase;
-    });
+    const fechasVentana = Array.from({ length: totalDias }, (_, i) => addDaysISO(fechaInicioISO, i));
 
     const disponibilidadPorDia = await Promise.all(
-        fechasVentana.map(async (fechaBase) => {
-            const fechaISO = fechaBase.toISOString().split('T')[0];
+        fechasVentana.map(async (fechaISO) => {
             const horas = await getDisponibilidadProfesional({
                 clinicId,
                 profesionalId: data.profesionalId,
                 dateISO: fechaISO,
             });
-            return { fechaBase, fechaISO, horas };
+            return { fechaISO, horas };
         })
     );
 
-    for (const { fechaBase, fechaISO, horas } of disponibilidadPorDia) {
+    for (const { fechaISO, horas } of disponibilidadPorDia) {
 
         const horasOcupadas = ocupadosPorDia.get(fechaISO) ?? new Set<string>();
 
@@ -364,13 +363,13 @@ export async function getProximosSlotsParaTurno(data: {
                 continue;
             }
 
-            const fechaSlot = new Date(fechaBase);
-            fechaSlot.setHours(h, m, 0, 0);
+            const fechaSlot = new Date(`${fechaISO}T${hora}:00-03:00`);
 
             const dia = new Intl.DateTimeFormat('es-AR', {
                 weekday: 'short',
                 day: 'numeric',
                 month: 'short',
+                timeZone: CLINIC_TZ,
             }).format(fechaSlot);
 
             slots.push({

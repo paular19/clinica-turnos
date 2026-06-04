@@ -2,15 +2,20 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 
-const DIAS_SEMANA = [
-    'Domingo',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
-];
+const DIAS_SEMANA_LABEL: Record<number, string> = {
+    0: 'Domingo',
+    1: 'Lunes',
+    2: 'Martes',
+    3: 'Miércoles',
+    4: 'Jueves',
+    5: 'Viernes',
+    6: 'Sábado',
+    7: 'Domingo',
+};
+
+function getDiaSemanaLabel(diaSemana: number) {
+    return DIAS_SEMANA_LABEL[diaSemana] ?? `Día ${diaSemana}`;
+}
 
 export default async function MedicosHorariosPage() {
     const { userId } = await auth();
@@ -69,7 +74,7 @@ export default async function MedicosHorariosPage() {
                                 <div>
                                     <p className="text-sm text-gray-500">Día</p>
                                     <p className="font-semibold text-gray-900">
-                                        {DIAS_SEMANA[horario.diaSemana]}
+                                        {getDiaSemanaLabel(horario.diaSemana)}
                                     </p>
                                 </div>
                                 <div>

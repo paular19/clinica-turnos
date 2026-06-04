@@ -17,12 +17,37 @@ import { generateComprobantePDF } from "../pdf/generateComprobante";
 import { z } from "zod";
 
 const SYNTHETIC_EMAIL_DOMAIN = "noemail.local";
+const CLINIC_TZ = "America/Argentina/Buenos_Aires";
 
 /* ---------------------------- Helpers ---------------------------- */
 
-function isoDow(date: Date) {
-  const d = date.getDay(); // 0=Dom
-  return d === 0 ? 7 : d;  // 1=Lun..7=Dom
+function getClinicDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLINIC_TZ,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const weekday = parts.find((p) => p.type === "weekday")?.value ?? "Mon";
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+
+  const weekdayMap: Record<string, number> = {
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+    Sun: 7,
+  };
+
+  return {
+    diaSemana: weekdayMap[weekday] ?? 1,
+    minutos: hour * 60 + minute,
+  };
 }
 
 function toMinutes(hhmm: string) {
@@ -71,14 +96,17 @@ async function validarSlotYCompatibilidad(tx: any, params: {
   }
 
   // Horario válido ese día + alineación al intervalo
-  const diaSemana = isoDow(fecha);
+  const { diaSemana, minutos } = getClinicDateParts(fecha);
+  const diasSemanaCompat = diaSemana === 7 ? [7, 0] : [diaSemana];
   const horarios = await tx.horario.findMany({
-    where: { clinicId, profesionalId, diaSemana },
+    where: {
+      clinicId,
+      profesionalId,
+      diaSemana: { in: diasSemanaCompat },
+    },
     select: { horaInicio: true, horaFin: true, intervaloMin: true },
   });
   if (!horarios.length) throw new Error("El médico no atiende ese día.");
-
-  const minutos = fecha.getHours() * 60 + fecha.getMinutes();
 
   const okSlot = horarios.some((h: any) => {
     const start = toMinutes(h.horaInicio);

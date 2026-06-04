@@ -11,8 +11,13 @@ const DIAS_SEMANA = [
     { value: 4, label: 'Jueves' },
     { value: 5, label: 'Viernes' },
     { value: 6, label: 'Sábado' },
-    { value: 0, label: 'Domingo' },
+    { value: 7, label: 'Domingo' },
 ];
+
+function diaSemanaToFormValue(diaSemana?: number) {
+    if (diaSemana === 0) return '7';
+    return typeof diaSemana === 'number' ? String(diaSemana) : '';
+}
 
 interface Profesional {
     id: string;
@@ -40,14 +45,14 @@ export default function HorarioForm({
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [profesionalId, setProfesionalId] = useState(horario?.profesionalId ?? '');
-    const [diaSemana, setDiaSemana] = useState(horario ? String(horario.diaSemana) : '');
+    const [diaSemana, setDiaSemana] = useState(diaSemanaToFormValue(horario?.diaSemana));
     const [horaInicio, setHoraInicio] = useState(horario?.horaInicio ?? '');
     const [horaFin, setHoraFin] = useState(horario?.horaFin ?? '');
     const [intervaloMin, setIntervaloMin] = useState(horario ? String(horario.intervaloMin) : '');
 
     useEffect(() => {
         setProfesionalId(horario?.profesionalId ?? '');
-        setDiaSemana(horario ? String(horario.diaSemana) : '');
+        setDiaSemana(diaSemanaToFormValue(horario?.diaSemana));
         setHoraInicio(horario?.horaInicio ?? '');
         setHoraFin(horario?.horaFin ?? '');
         setIntervaloMin(horario ? String(horario.intervaloMin) : '');

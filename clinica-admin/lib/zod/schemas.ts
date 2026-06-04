@@ -55,7 +55,7 @@ export const crearProfesionalSchema = z.object({
   fotoUrl: z.string().url().optional(),
   especialidadIds: z.array(z.string().uuid()).optional(),
   horarios: z.array(z.object({
-    diaSemana: z.number().int().min(0).max(6),
+    diaSemana: z.number().int().min(1).max(7),
     horaInicio: z.string(),
     horaFin: z.string(),
     intervaloMin: z.number().int().min(5)

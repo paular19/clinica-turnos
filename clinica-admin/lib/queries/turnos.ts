@@ -72,9 +72,15 @@ export async function getTurnoByCodigo(codigo: string, clinicId?: string) {
 }
 
 /* Disponibilidad (slots libres por día) */
-function isoDow(date: Date) {
-  const d = date.getDay();
+function isoDowFromDateISO(dateISO: string) {
+  // Evalua al mediodia UTC para evitar desfasajes por timezone del runtime.
+  const d = new Date(`${dateISO}T12:00:00Z`).getUTCDay();
   return d === 0 ? 7 : d;
+}
+
+function diaSemanaCompatValues(diaSemanaISO: number) {
+  // Compatibilidad retroactiva: algunos datos viejos guardaron domingo como 0.
+  return diaSemanaISO === 7 ? [7, 0] : [diaSemanaISO];
 }
 function toMinutes(hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
@@ -109,7 +115,8 @@ export async function getDisponibilidadProfesional(params: {
   const { clinicId, profesionalId, dateISO } = params;
 
   const day = new Date(`${dateISO}T00:00:00`);
-  const diaSemana = isoDow(day);
+  const diaSemana = isoDowFromDateISO(dateISO);
+  const diasSemanaCompat = diaSemanaCompatValues(diaSemana);
 
   // Verificar si el día está bloqueado
   const diaBloqueado = await prisma.diaBloqueado.findUnique({
@@ -125,7 +132,11 @@ export async function getDisponibilidadProfesional(params: {
   if (diaBloqueado) return []; // Día bloqueado, sin horarios disponibles
 
   const horarios = await prisma.horario.findMany({
-    where: { clinicId, profesionalId, diaSemana },
+    where: {
+      clinicId,
+      profesionalId,
+      diaSemana: { in: diasSemanaCompat },
+    },
     select: { horaInicio: true, horaFin: true, intervaloMin: true },
     orderBy: { horaInicio: "asc" },
   });

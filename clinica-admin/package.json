@@ -9,7 +9,8 @@
         "postinstall": "prisma generate",
         "typecheck": "tsc --noEmit",
         "prisma:generate": "prisma generate --schema=../prisma/schema.prisma",
-        "db:seed": "tsx ../prisma/seed.ts"
+        "db:seed": "tsx ../prisma/seed.ts",
+        "db:normalize-dia-semana": "tsx scripts/normalize-dia-semana.ts"
     },
     "dependencies": {
         "@clerk/localizations": "^3.34.0",

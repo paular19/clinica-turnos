@@ -118,16 +118,25 @@ export async function getDisponibilidadProfesional(params: {
   const diaSemana = isoDowFromDateISO(dateISO);
   const diasSemanaCompat = diaSemanaCompatValues(diaSemana);
 
-  // Verificar si el día está bloqueado
-  const diaBloqueado = await prisma.diaBloqueado.findUnique({
-    where: {
-      fecha_profesionalId_clinicId: {
-        fecha: day,
-        profesionalId,
-        clinicId,
+  // Verificar si el día está bloqueado.
+  // Si la DB está desactualizada y no tiene esta tabla, no cortar disponibilidad.
+  let diaBloqueado: { id: string } | null = null;
+  try {
+    diaBloqueado = await prisma.diaBloqueado.findUnique({
+      where: {
+        fecha_profesionalId_clinicId: {
+          fecha: day,
+          profesionalId,
+          clinicId,
+        },
       },
-    },
-  });
+      select: { id: true },
+    });
+  } catch (error: any) {
+    if (error?.code !== "P2021") {
+      throw error;
+    }
+  }
 
   if (diaBloqueado) return []; // Día bloqueado, sin horarios disponibles
 
